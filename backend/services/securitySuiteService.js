@@ -127,22 +127,174 @@ function collectUrlIndicators(url) {
   return uniqueStrings(indicators);
 }
 
+function formatList(items = []) {
+  const values = uniqueStrings(items);
+  if (values.length === 0) return "";
+  if (values.length === 1) return values[0];
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
+}
+
+function simplifyIndicator(indicator) {
+  const normalized = String(indicator || "").trim();
+  if (!normalized) return "";
+
+  const replacements = new Map([
+    ["Urgency wording detected", "urgent wording"],
+    ["Account verification request", "requests to verify an account"],
+    ["Direct call-to-click language", "pushy click instructions"],
+    ["Account suspension scare tactic", "account suspension threats"],
+    ["Sensitive OTP request", "requests for an OTP or one-time code"],
+    ["Password-related request", "password-related wording"],
+    ["Banking theme detected", "banking-related wording"],
+    ["URL hides destination with @ encoding", "a link that hides its real destination"],
+    ["Punycode domain can mask lookalike characters", "a domain that may imitate a trusted site"],
+    ["Direct IP host instead of a normal domain", "a link that uses a raw IP address instead of a normal domain"],
+    ["High-risk top-level domain", "an unusual or risky web address ending"],
+    ["Credential-harvesting language in the URL path", "login or verification words inside the link"],
+    ["Multiple subdomains increase spoofing risk", "a long subdomain structure often used for spoofing"],
+    ["Long URL structure is often used to obscure intent", "an unusually long link structure"],
+    ["Instruction override attempt", "phrases that try to override earlier instructions"],
+    ["References hidden system prompt", "references to hidden instructions or system prompts"],
+    ["Jailbreak language detected", "jailbreak-style wording"],
+    ["Safety bypass request", "attempts to bypass safety rules"],
+    ["Role reassignment prompt", "language that tries to change the assistant's role"],
+    ["Repeated failed authentication attempt", "repeated failed login attempts"],
+    ["Unauthorized access marker", "unauthorized access wording"],
+    ["Privileged command execution", "privileged command activity"],
+    ["Encoded PowerShell execution", "encoded PowerShell commands"],
+    ["Shell execution from log", "shell execution patterns"],
+    ["SQL injection artifact", "SQL injection style text"],
+    ["Sensitive file access reference", "references to sensitive files"],
+    ["Privilege escalation indicator", "privilege escalation wording"],
+    ["Long-form generated text sample", "very long, polished text"],
+    ["Low token diversity / repetitive phrasing", "repetitive sentence patterns"],
+    ["Model-style refusal phrasing detected", "AI-style refusal wording"],
+    ["Image deepfake model unavailable", "limited image analysis coverage"],
+    ["Audio deepfake model unavailable", "limited audio analysis coverage"]
+  ]);
+
+  if (replacements.has(normalized)) {
+    return replacements.get(normalized);
+  }
+
+  return normalized.charAt(0).toLowerCase() + normalized.slice(1);
+}
+
+function inferCategoryFromSummary(baseSummary) {
+  const normalized = String(baseSummary || "").toLowerCase();
+
+  if (normalized.includes("prompt")) return "prompt";
+  if (normalized.includes("url")) return "url";
+  if (normalized.includes("deepfake image") || normalized.includes("image input")) return "image";
+  if (normalized.includes("deepfake audio") || normalized.includes("audio input")) return "audio";
+  if (normalized.includes("ai-content") || normalized.includes("generated")) return "generated";
+  if (normalized.includes("log") || normalized.includes("securebert") || normalized.includes("anomal")) return "log";
+  if (normalized.includes("phishing") || normalized.includes("sms") || normalized.includes("email")) return "message";
+
+  return "content";
+}
+
+function buildCategorySentence(category, indicators = []) {
+  const plainIndicators = uniqueStrings(indicators.map(simplifyIndicator)).filter(Boolean);
+
+  if (category === "message") {
+    if (plainIndicators.length) {
+      return `This message was flagged because it uses ${formatList(plainIndicators.slice(0, 3))}.`;
+    }
+    return "This message was flagged because its wording matches patterns commonly seen in scams or phishing attempts.";
+  }
+
+  if (category === "url") {
+    if (plainIndicators.length) {
+      return `This link looks suspicious because it has ${formatList(plainIndicators.slice(0, 3))}.`;
+    }
+    return "This link looks suspicious because its structure matches patterns often seen in deceptive or unsafe URLs.";
+  }
+
+  if (category === "prompt") {
+    if (plainIndicators.length) {
+      return `This prompt was flagged because it contains ${formatList(plainIndicators.slice(0, 3))}.`;
+    }
+    return "This prompt was flagged because it looks like it is trying to override rules or extract restricted instructions.";
+  }
+
+  if (category === "log") {
+    if (plainIndicators.length) {
+      return `This log was flagged because it includes ${formatList(plainIndicators.slice(0, 3))}.`;
+    }
+    return "This log was flagged because it contains patterns often linked to suspicious system activity.";
+  }
+
+  if (category === "generated") {
+    if (plainIndicators.length) {
+      return `This text was flagged because it shows ${formatList(plainIndicators.slice(0, 3))}.`;
+    }
+    return "This text was flagged because its wording and sentence pattern look machine-generated.";
+  }
+
+  if (category === "image") {
+    return "This image was flagged because some visual patterns look artificially generated or manipulated.";
+  }
+
+  if (category === "audio") {
+    return "This audio was flagged because some voice patterns may be artificially generated or manipulated.";
+  }
+
+  return plainIndicators.length
+    ? `This content was flagged because it contains ${formatList(plainIndicators.slice(0, 3))}.`
+    : "This content was flagged because its wording and structure match suspicious patterns.";
+}
+
 function buildDetectorExplanation(baseSummary, indicators = [], candidates = []) {
-  const parts = [String(baseSummary || "").trim()].filter(Boolean);
+  const summary = String(baseSummary || "").trim();
   const normalizedIndicators = uniqueStrings(indicators);
-  const candidateSummary = summarizeCandidates(candidates)
-    .map((candidate) => `${candidate.label} (${candidate.confidencePercent}%)`)
-    .join(", ");
+  const category = inferCategoryFromSummary(summary);
+  const lower = summary.toLowerCase();
 
-  if (normalizedIndicators.length) {
-    parts.push(`Key signals: ${normalizedIndicators.slice(0, 4).join(", ")}.`);
+  if (!summary) {
+    return buildCategorySentence(category, normalizedIndicators);
   }
 
-  if (candidateSummary) {
-    parts.push(`Top model outputs: ${candidateSummary}.`);
+  if (lower.startsWith("no text provided") || lower.startsWith("no url provided") || lower.startsWith("no url found") || lower.startsWith("no image input") || lower.startsWith("no audio input")) {
+    return summary;
   }
 
-  return parts.join(" ");
+  if (lower.includes("unavailable")) {
+    if (category === "image") return "The image could not be checked deeply right now, so no strong conclusion was made.";
+    if (category === "audio") return "The audio could not be checked deeply right now, so no strong conclusion was made.";
+    return "A deeper check was not available right now, so the result may rely on lighter warning signs.";
+  }
+
+  if (lower.includes("fallback") || lower.includes("failed")) {
+    const firstSentence = buildCategorySentence(category, normalizedIndicators);
+    return `${firstSentence} This score was estimated from visible warning signs in the content.`;
+  }
+
+  const firstSentence = buildCategorySentence(category, normalizedIndicators);
+  const secondarySentence = normalizedIndicators.length
+    ? `The score increased mainly because of ${formatList(normalizedIndicators.map(simplifyIndicator).slice(0, 3))}.`
+    : "The score increased because the overall wording and structure matched risky patterns.";
+
+  return `${firstSentence} ${secondarySentence}`;
+}
+
+function buildCheckSentence(result) {
+  if (!result) return null;
+
+  if (result.riskScore >= 40) {
+    return result.explanation;
+  }
+
+  if (result.detector === "maliciousUrl" && result.source === "none") {
+    return "No suspicious link was found in the text.";
+  }
+
+  if ((result.indicators || []).length > 0) {
+    return `A smaller warning sign was noticed: ${formatList(result.indicators.map(simplifyIndicator).slice(0, 2))}.`;
+  }
+
+  return null;
 }
 
 function extractFirstUrl(text) {
@@ -847,13 +999,35 @@ async function detectDeepfakeAudio(mediaInput) {
 }
 
 function summarizeSuite(checks) {
-  const summaries = [];
-  for (const [name, result] of Object.entries(checks)) {
-    summaries.push(
-      `${name}: ${result.threatType} (${result.riskScore}%) via ${result.source}${result.indicators?.length ? ` [${result.indicators.slice(0, 2).join(", ")}]` : ""}`
-    );
+  const results = Object.values(checks || {});
+  if (!results.length) {
+    return "No content was available to explain.";
   }
-  return summaries.join(" | ");
+
+  const primary = pickPrimaryThreat(checks);
+  const suspiciousResults = results.filter((result) => Number(result?.riskScore || 0) >= 40);
+
+  if (!primary || primary.riskScore < 40) {
+    const softSignals = uniqueStrings(results.flatMap((result) => result.indicators || []).map(simplifyIndicator)).slice(0, 3);
+    if (softSignals.length) {
+      return `Nothing strongly suspicious was found, but the content still showed ${formatList(softSignals)}.`;
+    }
+    return "Nothing strongly suspicious was found in the wording, structure, or links.";
+  }
+
+  const parts = [primary.explanation];
+
+  const secondarySignals = suspiciousResults
+    .filter((result) => result !== primary)
+    .map((result) => buildCheckSentence(result))
+    .filter(Boolean)
+    .slice(0, 2);
+
+  if (secondarySignals.length) {
+    parts.push(`Other warning signs: ${secondarySignals.join(" ")}`);
+  }
+
+  return parts.join(" ");
 }
 
 function pickPrimaryThreat(checks) {
@@ -1001,14 +1175,14 @@ async function analyzeUnifiedThreatInput(input) {
     riskScore,
     riskLevel: mapRiskLevel(riskScore),
     threatType: primary && riskScore >= 40 ? primary.threatType : "None",
-    explanation: summarizeSuite(checks),
+    explanation: primary?.explanation || summarizeSuite(checks),
     indicators: uniqueStrings(
       (primary?.indicators && primary.indicators.length
         ? primary.indicators
         : Object.values(checks).flatMap((result) => result.indicators || []))
     ).slice(0, 6),
     explainability: {
-      summary: primary?.explanation || summarizeSuite(checks),
+      summary: summarizeSuite(checks),
       primaryDetector: primary?.detector || null,
       primaryModel: primary?.model || null,
       indicators: uniqueStrings(
