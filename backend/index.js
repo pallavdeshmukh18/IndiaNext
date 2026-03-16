@@ -59,12 +59,17 @@ app.post("/whatsapp", express.urlencoded({ extended: false }), async (req, res) 
 
 // MongoDB connection
 mongoose
-    .connect(process.env.MONGO_URI)
+    .connect(process.env.MONGO_URI, {
+        serverSelectionTimeoutMS: 10000,
+    })
     .then(() => {
         console.log("Mongo connected");
     })
     .catch((err) => {
         console.error("Mongo connection error:", err);
+        if (String(err.message || "").includes("querySrv")) {
+            console.error("MongoDB Atlas SRV lookup failed. Use a non-SRV mongodb:// replica set URI in backend/.env.");
+        }
     });
 
 // test route

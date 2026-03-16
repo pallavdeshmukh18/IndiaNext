@@ -42,8 +42,12 @@ router.get("/", async (req, res) => {
           attachments: parsedEmail.attachments,
           snippet: parsedEmail.snippet,
           scamProbability: mlResult.scam_probability,
+          riskScore: mlResult.risk_score,
+          riskLevel: mlResult.risk_level,
           label: mlResult.label,
           explanation: mlResult.explanation,
+          modelSource: mlResult.model_source,
+          scoreBasis: mlResult.score_basis,
         });
 
         return {
@@ -56,9 +60,13 @@ router.get("/", async (req, res) => {
           links: scanRecord.links,
           attachments: scanRecord.attachments,
           scamProbability: scanRecord.scamProbability,
+          riskScore: scanRecord.riskScore,
+          riskLevel: scanRecord.riskLevel,
           label: scanRecord.label,
           explanation: scanRecord.explanation,
           explainability: mlResult.explainability || null,
+          modelSource: scanRecord.modelSource,
+          scoreBasis: scanRecord.scoreBasis,
           createdAt: scanRecord.createdAt,
         };
       })

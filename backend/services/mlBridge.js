@@ -17,6 +17,14 @@ async function analyzeEmail(emailData) {
     result.explanation = [];
   }
 
+  result.scam_probability = Number(result.scam_probability || 0);
+  result.risk_score = Number(result.risk_score ?? result.scam_probability * 100);
+  result.risk_level = result.risk_level || "LOW";
+  result.model_source = result.model_source || "ML/phishing_mail/phishing_model.pkl";
+  result.score_basis =
+    result.score_basis ||
+    "Risk score is derived from the local phishing model probability on a 0-100 scale.";
+
   if (result.explanation.length === 0) {
     result.explanation = [`Model confidence: ${(Number(result.scam_probability) * 100).toFixed(1)}%`];
   }

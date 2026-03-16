@@ -17,12 +17,13 @@ function createOAuthClient() {
   );
 }
 
-function getAuthUrl() {
+function getAuthUrl(state) {
   const client = createOAuthClient();
   return client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
     scope: SCOPES,
+    state,
   });
 }
 

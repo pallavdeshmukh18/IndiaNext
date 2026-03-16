@@ -98,6 +98,14 @@ def build_explainability_summary(label, phishing_probability, explanation_terms)
     return f"Email classifier predicted {label} with {confidence_pct}% phishing probability."
 
 
+def map_risk_level(probability):
+    if probability >= 0.75:
+        return "HIGH"
+    if probability >= 0.45:
+        return "MEDIUM"
+    return "LOW"
+
+
 def main():
     raw_payload = sys.argv[1] if len(sys.argv) > 1 else "{}"
     payload = json.loads(raw_payload or "{}")
@@ -106,11 +114,15 @@ def main():
     predicted_class = int(MODEL.predict(features)[0])
     phishing_probability = infer_probability(features)
     explanation = build_explanation(features)
+    risk_score = round(phishing_probability * 100, 2)
+    risk_level = map_risk_level(phishing_probability)
 
     label = "phishing" if predicted_class == 1 else "safe"
 
     result = {
         "scam_probability": round(phishing_probability, 6),
+        "risk_score": risk_score,
+        "risk_level": risk_level,
         "label": label,
         "explanation": explanation,
         "explainability": {
@@ -119,6 +131,11 @@ def main():
             "summary": build_explainability_summary(label, phishing_probability, explanation),
             "indicators": explanation[:5],
         },
+        "model_source": "ML/phishing_mail/phishing_model.pkl",
+        "score_basis": (
+            "Risk score is the phishing probability from the trained local phishing model "
+            "(phishing_model.pkl + TF-IDF vectorizer), normalized to a 0-100 scale."
+        ),
     }
 
     print(json.dumps(result))
