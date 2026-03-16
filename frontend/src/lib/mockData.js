@@ -134,6 +134,39 @@ export function normalizeScan(scan) {
   };
 }
 
+function normalizePercent(value, fallback = 0) {
+  const numeric = Number(value);
+
+  if (!Number.isFinite(numeric)) {
+    return Math.round(fallback);
+  }
+
+  if (numeric <= 1) {
+    return Math.round(numeric * 100);
+  }
+
+  return Math.round(numeric);
+}
+
+function extractResultConfidence(result, fallbackRiskScore) {
+  const directConfidence = Number(result.confidence);
+  if (Number.isFinite(directConfidence)) {
+    return normalizePercent(directConfidence, fallbackRiskScore);
+  }
+
+  const primaryDetector = result.explainability?.primaryDetector;
+  const primaryComponent = primaryDetector
+    ? result.components?.[primaryDetector] || result.explainability?.components?.[primaryDetector]
+    : null;
+  const componentConfidence = primaryComponent?.confidencePercent ?? primaryComponent?.confidence;
+
+  if (Number.isFinite(Number(componentConfidence))) {
+    return normalizePercent(componentConfidence, fallbackRiskScore);
+  }
+
+  return Math.round(fallbackRiskScore);
+}
+
 function canUseStorage() {
   return typeof window !== 'undefined';
 }
@@ -357,17 +390,18 @@ export function normalizeAnalysisResult(result, input, inputType) {
   const recommendationText = Array.isArray(result.recommendations)
     ? result.recommendations[0]
     : result.recommendation;
+  const normalizedInputType = result.inputType || inputType;
 
   return {
     threatType: result.threatType || result.prediction || 'Unknown Threat',
-    confidence: Number(result.confidence ?? riskScore),
+    confidence: extractResultConfidence(result, riskScore),
     riskScore,
     riskLevel: result.riskLevel || deriveRiskLevel(riskScore),
     explanation: explanationText || 'No explanation was returned by the classifier.',
     recommendation: recommendationText || 'Escalate the item for analyst review.',
     indicators: result.indicators?.length ? result.indicators : extractIndicators(input),
     input,
-    inputType,
+    inputType: normalizedInputType,
     analyzedAt: result.analyzedAt || new Date().toISOString(),
     logId: result.logId || null
   };

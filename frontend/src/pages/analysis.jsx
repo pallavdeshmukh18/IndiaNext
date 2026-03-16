@@ -28,6 +28,8 @@ const channels = [
   { key: 'audioUrl', label: 'Audio URL', icon: Volume2 }
 ];
 
+const channelLabels = Object.fromEntries(channels.map(({ key, label }) => [key, label]));
+
 const sampleInputs = {
   messageText: [
     'Urgent: verify your account now.',
@@ -243,7 +245,7 @@ const Analysis = ({ session }) => {
                   </div>
                   <div>
                     <span className="workspace-muted">Channel</span>
-                    <strong>{inputType}</strong>
+                    <strong>{channelLabels[result.inputType] || result.inputType}</strong>
                   </div>
                 </div>
 
