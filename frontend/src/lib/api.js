@@ -67,6 +67,41 @@ export const threatApi = {
         inputType
       }
     });
+  },
+
+  quickAnalyze({ token, payload, inputType }) {
+    return request('/threats/quick-analyze', {
+      method: 'POST',
+      token,
+      body: {
+        ...payload,
+        inputType
+      }
+    });
+  },
+
+  suiteAnalyze({ token, formData }) {
+    return fetch(`${BASE_URL}/threats/suite-analyze`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: formData
+    }).then(async (response) => {
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+      return response.json();
+    });
+  },
+
+  liveScreenAnalyze({ token, payload }) {
+    return request('/threats/live-screen-analyze', {
+      method: 'POST',
+      token,
+      body: payload
+    });
   }
 };
 
@@ -89,6 +124,10 @@ export const analyticsApi = {
 
   getScans(token, { page = 1, limit = 20 } = {}) {
     return request(`/scans?page=${page}&limit=${limit}`, { token });
+  },
+
+  getScanById(token, scanId) {
+    return request(`/scans/${scanId}`, { token });
   }
 };
 

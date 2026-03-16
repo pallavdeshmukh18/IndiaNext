@@ -35,14 +35,29 @@ const toDataUriFromUploadedFile = (file) => {
 
 const analyzeThreat = async (req, res) => {
     try {
-        const { input } = req.body;
+        const {
+            messageText,
+            url,
+            promptInput,
+            logText,
+            generatedText,
+            imageUrl,
+            imageBase64,
+            audioUrl,
+            audioBase64,
+            inputType = "messageText"
+        } = req.body;
+
+        // Get the actual input based on inputType
+        const input = req.body[inputType] || messageText || url || promptInput || logText || generatedText;
 
         if (!input) {
             return res.status(400).json({ error: "Input is required for analysis." });
         }
 
         const analysisOutput = await detectThreat(input, {
-            pageUrl: req.body.pageUrl
+            pageUrl: req.body.pageUrl,
+            inputType
         });
         
         // Add recommendation based on ML output
@@ -50,7 +65,7 @@ const analyzeThreat = async (req, res) => {
 
         // Call Dev B's logService to persist the scan result
         const savedLog = await saveScanResult(req.user ? req.user._id : FALLBACK_USER_ID, {
-            inputType: req.body.inputType || "text",
+            inputType: inputType || "text",
             content: input,
             prediction: analysisOutput.threatType,
             confidence: analysisOutput.riskScore,
@@ -165,7 +180,21 @@ const analyzeSecuritySuite = async (req, res) => {
 
 const quickAnalyzeThreat = async (req, res) => {
     try {
-        const { input, pageUrl, title } = req.body;
+        const {
+            messageText,
+            url,
+            promptInput,
+            logText,
+            generatedText,
+            imageUrl,
+            imageBase64,
+            inputType = "messageText",
+            pageUrl,
+            title
+        } = req.body;
+
+        // Get the actual input based on inputType
+        const input = req.body[inputType] || messageText || url || promptInput || logText || generatedText;
 
         if (!input || typeof input !== "string") {
             return res.status(400).json({ error: "Input text is required for quick analysis." });
@@ -173,7 +202,8 @@ const quickAnalyzeThreat = async (req, res) => {
 
         const normalizedInput = input.slice(0, 10000);
         const analysisOutput = await detectThreat(normalizedInput, {
-            pageUrl: pageUrl || null
+            pageUrl: pageUrl || null,
+            inputType
         });
         const recommendation = getRecommendation(analysisOutput.threatType, analysisOutput.riskScore);
 
