@@ -1,0 +1,249 @@
+.dashboard-section {
+    padding: 5rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+}
+
+.dashboard-mockup {
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0d0d0d;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.mockup-header {
+    background: #161618;
+    border-bottom: 1px solid var(--glass-border);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.window-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-right: 2rem;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.dot.red {
+    background-color: #ff5f56;
+}
+
+.dot.yellow {
+    background-color: #ffbd2e;
+}
+
+.dot.green {
+    background-color: #27c93f;
+}
+
+.mockup-tabs {
+    display: flex;
+    gap: 1rem;
+}
+
+.tab {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    cursor: default;
+}
+
+.tab.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+.mockup-body {
+    display: flex;
+    min-height: 400px;
+}
+
+.panel-left {
+    flex: 3;
+    border-right: 1px solid var(--glass-border);
+    padding: 1.5rem;
+    background: #0a0a0a;
+}
+
+.panel-right {
+    flex: 2;
+    padding: 1.5rem;
+    background: #111111;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.code-block {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: #050505;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.code-line {
+    color: #a3a3a3;
+}
+
+.code-time {
+    color: #525252;
+    margin-right: 0.75rem;
+}
+
+.highlight-err {
+    color: #f7b2b2;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 0.1rem 0.25rem;
+    border-radius: 3px;
+    border-left: 2px solid #ef4444;
+}
+
+.blink {
+    animation: blinker 1.5s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Right Panel Elements */
+.risk-score-card,
+.analysis-card,
+.action-card {
+    background: #18181b;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1.25rem;
+}
+
+.mt-4 {
+    margin-top: 1rem;
+}
+
+.risk-header,
+.analysis-header,
+.action-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+}
+
+.risk-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.text-red {
+    color: #f87171;
+}
+
+.text-green {
+    color: #4ade80;
+}
+
+.confidence-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.confidence-fill.red {
+    background: #ef4444;
+    height: 100%;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+.confidence-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+.analysis-list {
+    list-style: none;
+    font-size: 0.85rem;
+    color: #d4d4d8;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.analysis-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.analysis-list li svg {
+    color: var(--text-muted);
+}
+
+.action-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+}
+
+.btn-action {
+    width: 100%;
+    background: #f87171;
+    color: #000;
+    padding: 0.6rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.btn-action:hover {
+    background: #fca5a5;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .mockup-body {
+        flex-direction: column;
+    }
+
+    .panel-left {
+        border-right: none;
+        border-bottom: 1px solid var(--glass-border);
+    }
+}

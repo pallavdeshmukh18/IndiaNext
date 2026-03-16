@@ -1,0 +1,149 @@
+.graphics-container {
+    width: 100vw;
+    max-width: 100vw;
+    position: relative;
+    margin-top: -120px;
+    height: 550px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+}
+
+.graphics-hands {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hand-wrapper {
+    width: 42%;
+    max-width: 480px;
+    filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.5));
+    transition: transform 0.3s ease;
+}
+
+.hand-image {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+
+    /* Dotted halftone effect */
+    -webkit-mask-image: radial-gradient(circle, black 40%, transparent 41%);
+    -webkit-mask-size: 8px 8px;
+    mask-image: radial-gradient(circle, black 40%, transparent 41%);
+    mask-size: 8px 8px;
+}
+
+.left-hand {
+    animation: floatLeft 6s ease-in-out infinite;
+    transform-origin: left bottom;
+    margin-top: 50px;
+    /* Push down slightly */
+}
+
+.right-hand {
+    animation: floatRight 7s ease-in-out infinite;
+    transform-origin: right bottom;
+    margin-top: 150px;
+    /* Push down more to align with the pointing gesture */
+    width: 38%;
+    /* Slightly smaller for perspective */
+}
+
+.center-glow-container {
+    position: absolute;
+    left: 45%;
+    top: 60%;
+    /* Move left and down to sit between the hands perfectly */
+    transform: translate(-50%, -50%);
+    width: 220px;
+    height: 220px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+}
+
+.center-shape {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    animation: pulseRotate 10s linear infinite;
+    position: relative;
+    z-index: 2;
+
+    /* Dotted halftone effect */
+    -webkit-mask-image: radial-gradient(circle, black 40%, transparent 41%);
+    -webkit-mask-size: 8px 8px;
+    mask-image: radial-gradient(circle, black 40%, transparent 41%);
+    mask-size: 8px 8px;
+}
+
+.glow-effect {
+    position: absolute;
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, rgba(236, 72, 153, 0.2) 40%, rgba(0, 0, 0, 0) 70%);
+    filter: blur(30px);
+    z-index: 1;
+    animation: glowPulse 4s ease-in-out infinite alternate;
+}
+
+/* Animations */
+@keyframes floatLeft {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-8px) rotate(1deg);
+    }
+
+    /* Heavier, smaller movement for robotic hand */
+}
+
+@keyframes floatRight {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-18px) rotate(-3deg);
+    }
+
+    /* Lighter, larger movement for human hand */
+}
+
+@keyframes pulseRotate {
+    0% {
+        transform: scale(1) rotate(0deg);
+    }
+
+    50% {
+        transform: scale(1.05) rotate(180deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(360deg);
+    }
+}
+
+@keyframes glowPulse {
+    0% {
+        opacity: 0.5;
+        transform: scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}

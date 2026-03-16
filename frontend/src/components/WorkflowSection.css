@@ -1,0 +1,119 @@
+.workflow-section {
+    padding: 5rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+}
+
+.workflow-cards {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin-top: 4rem;
+}
+
+.workflow-card {
+    flex: 1;
+    position: relative;
+    padding: 2rem 1.75rem 2rem;
+    border-radius: 16px;
+    background: linear-gradient(160deg, rgba(20,20,22,0.9) 0%, rgba(10,10,12,0.95) 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    overflow: hidden;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.workflow-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(255,255,255,0.15);
+}
+
+/* Accent bar on top-left edge */
+.wf-card-accent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 2px;
+    border-radius: 0 0 4px 0;
+    opacity: 0.7;
+}
+
+.wf-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.75rem;
+}
+
+.wf-step-num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.15);
+    font-family: var(--font-mono);
+}
+
+.wf-time-badge {
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+}
+
+.wf-icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.workflow-card:hover .wf-icon-wrap {
+    transform: scale(1.08);
+}
+
+.wf-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+}
+
+.wf-desc {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+}
+
+/* Arrow connector between cards */
+.wf-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    color: rgba(255,255,255,0.15);
+    margin-top: -6px; /* optical centering with card */
+}
+
+@media (max-width: 900px) {
+    .workflow-cards {
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+    .wf-arrow {
+        transform: rotate(90deg);
+        width: auto;
+        height: 28px;
+    }
+}
