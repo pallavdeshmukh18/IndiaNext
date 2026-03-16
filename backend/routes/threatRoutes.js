@@ -3,7 +3,8 @@ const router = express.Router();
 const {
     analyzeThreat,
     quickAnalyzeThreat,
-    analyzeSecuritySuite
+    analyzeSecuritySuite,
+    analyzeLiveScreenThreat
 } = require('../controllers/threatController');
 
 // POST /api/threats/quick-analyze
@@ -14,5 +15,8 @@ router.post('/analyze', analyzeThreat); // temporarily disabled protect for inte
 
 // POST /api/threats/suite-analyze
 router.post('/suite-analyze', analyzeSecuritySuite);
+
+// POST /api/threats/live-screen-analyze
+router.post('/live-screen-analyze', analyzeLiveScreenThreat);
 
 module.exports = router;

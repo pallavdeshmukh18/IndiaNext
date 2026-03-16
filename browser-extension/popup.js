@@ -1,5 +1,5 @@
 const DEFAULT_BACKEND_URL = "http://localhost:8000";
-const QUICK_ANALYZE_PATH = "/api/threats/quick-analyze";
+const LIVE_SCREEN_ANALYZE_PATH = "/api/threats/live-screen-analyze";
 const LIVE_SCAN_INTERVAL_MS = 8000;
 
 const backendUrlInput = document.getElementById("backendUrl");
@@ -19,6 +19,10 @@ const meterFill = document.getElementById("meterFill");
 const threatType = document.getElementById("threatType");
 const explanation = document.getElementById("explanation");
 const recommendation = document.getElementById("recommendation");
+const detectedBrand = document.getElementById("detectedBrand");
+const actualDomain = document.getElementById("actualDomain");
+const evidenceList = document.getElementById("evidenceList");
+const ocrText = document.getElementById("ocrText");
 
 let liveScanTimer = null;
 let isAnalyzing = false;
@@ -38,7 +42,7 @@ async function init() {
     startLiveMonitoring();
   }
 
-  runAnalysis({ captureScreenshot: false });
+  runAnalysis({ captureScreenshot: true });
 }
 
 async function runAnalysis(options = {}) {
@@ -55,25 +59,27 @@ async function runAnalysis(options = {}) {
     }
 
     const pageSignals = await extractPageSignals(tab.id);
+    let screenshotDataUrl = null;
 
     if (options.captureScreenshot && typeof tab.windowId === "number") {
-      await tryCapturePreview(tab.windowId);
+      screenshotDataUrl = await tryCapturePreview(tab.windowId);
     }
 
-    setBusyState(true, "Analyzing fishiness...");
+    setBusyState(true, screenshotDataUrl ? "Running OCR and phishing checks..." : "Analyzing page signals...");
     const backendUrl = normalizeBackendUrl(backendUrlInput.value);
-    const payload = buildInputPayload(pageSignals);
 
-    const response = await fetch(`${backendUrl}${QUICK_ANALYZE_PATH}`, {
+    const response = await fetch(`${backendUrl}${LIVE_SCREEN_ANALYZE_PATH}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        input: payload,
+        pageText: buildInputPayload(pageSignals),
         inputType: "web_snapshot",
         pageUrl: pageSignals.url,
-        title: pageSignals.title
+        title: pageSignals.title,
+        pageSignals,
+        screenshotBase64: screenshotDataUrl
       })
     });
 
@@ -99,7 +105,7 @@ function onLiveModeToggle() {
 
   if (enabled) {
     startLiveMonitoring();
-    runAnalysis({ captureScreenshot: false });
+    runAnalysis({ captureScreenshot: true });
   } else {
     stopLiveMonitoring();
     statusText.textContent = "Live monitor paused.";
@@ -109,7 +115,7 @@ function onLiveModeToggle() {
 function startLiveMonitoring() {
   stopLiveMonitoring();
   liveScanTimer = setInterval(() => {
-    runAnalysis({ captureScreenshot: false });
+    runAnalysis({ captureScreenshot: true });
   }, LIVE_SCAN_INTERVAL_MS);
 }
 
@@ -144,6 +150,23 @@ function renderResult(data) {
   threatType.textContent = data.threatType || "None";
   explanation.textContent = data.explanation || "No explanation available.";
   recommendation.textContent = data.recommendation || "No recommendation available.";
+  detectedBrand.textContent = data.brand || "None detected";
+  actualDomain.textContent = data.actualDomain || "Unknown";
+  ocrText.textContent = data.ocrText || "No OCR text extracted from the screenshot.";
+
+  evidenceList.innerHTML = "";
+  const evidence = Array.isArray(data.evidence) ? data.evidence : [];
+  if (evidence.length) {
+    for (const item of evidence) {
+      const li = document.createElement("li");
+      li.textContent = item;
+      evidenceList.appendChild(li);
+    }
+  } else {
+    const li = document.createElement("li");
+    li.textContent = "No strong phishing evidence found in the current screen.";
+    evidenceList.appendChild(li);
+  }
 
   resultCard.classList.remove("hidden");
 }
@@ -307,17 +330,20 @@ async function getActiveTab() {
 
 async function tryCapturePreview(windowId) {
   try {
-    const screenshotDataUrl = await captureVisibleTab(windowId);
+    const rawScreenshot = await captureVisibleTab(windowId);
+    const screenshotDataUrl = await optimizeScreenshot(rawScreenshot);
     screenshotPreview.src = screenshotDataUrl;
     previewCard.classList.remove("hidden");
+    return screenshotDataUrl;
   } catch (error) {
     // Keep scan results available even if screenshot capture is blocked on this tab.
+    return null;
   }
 }
 
 async function captureVisibleTab(windowId) {
   return new Promise((resolve, reject) => {
-    chrome.tabs.captureVisibleTab(windowId, { format: "png", quality: 90 }, (dataUrl) => {
+    chrome.tabs.captureVisibleTab(windowId, { format: "jpeg", quality: 65 }, (dataUrl) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
         return;
@@ -328,6 +354,30 @@ async function captureVisibleTab(windowId) {
       }
       resolve(dataUrl);
     });
+  });
+}
+
+async function optimizeScreenshot(dataUrl) {
+  const image = await loadImage(dataUrl);
+  const maxWidth = 1440;
+  const scale = image.width > maxWidth ? maxWidth / image.width : 1;
+  const canvas = document.createElement("canvas");
+
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
+
+  const context = canvas.getContext("2d");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  return canvas.toDataURL("image/jpeg", 0.72);
+}
+
+async function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Could not process screenshot."));
+    image.src = dataUrl;
   });
 }
 

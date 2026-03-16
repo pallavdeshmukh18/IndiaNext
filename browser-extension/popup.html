@@ -10,7 +10,7 @@
     <main class="app">
       <header class="header">
         <h1>Threat Lens</h1>
-        <p>Capture, analyze, and score this page now.</p>
+        <p>OCR the current screen, inspect the page DOM, and flag phishing patterns live.</p>
       </header>
 
       <label class="field-label" for="backendUrl">Backend URL</label>
@@ -50,9 +50,30 @@
           <p id="threatType" class="result-text">None</p>
         </div>
 
+        <div class="detail-grid">
+          <div class="detail-card">
+            <p class="result-label">Detected Brand</p>
+            <p id="detectedBrand" class="result-text">None</p>
+          </div>
+          <div class="detail-card">
+            <p class="result-label">Actual Domain</p>
+            <p id="actualDomain" class="result-text">Unknown</p>
+          </div>
+        </div>
+
         <div class="result-block">
           <p class="result-label">Why</p>
           <p id="explanation" class="result-text"></p>
+        </div>
+
+        <div class="result-block">
+          <p class="result-label">Evidence</p>
+          <ul id="evidenceList" class="evidence-list"></ul>
+        </div>
+
+        <div class="result-block">
+          <p class="result-label">OCR Excerpt</p>
+          <p id="ocrText" class="result-text result-mono">No screenshot OCR yet.</p>
         </div>
 
         <div class="result-block">

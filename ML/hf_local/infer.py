@@ -6,7 +6,7 @@ Reads JSON payload from stdin and writes JSON response to stdout.
 Input shape:
 {
   "model": "model-id-or-local-path",
-  "inputType": "text" | "image" | "audio",
+    "inputType": "text" | "image" | "audio" | "image_to_text",
   "text": "..."                    # required for text
   "source": "path|url|data-uri"    # required for image/audio
 }
@@ -126,6 +126,16 @@ def _infer_image(model: str, source: str):
     return _as_candidates(out), out
 
 
+def _infer_image_to_text(model: str, source: str):
+    clf = pipeline(
+        task="image-to-text",
+        model=model
+    )
+    img = _load_image_source(source)
+    out = clf(img)
+    return [], out
+
+
 def _infer_audio(model: str, source: str):
     clf = pipeline(
         task="audio-classification",
@@ -148,8 +158,8 @@ def main():
 
     if not model:
         raise ValueError("Payload field 'model' is required.")
-    if input_type not in {"text", "image", "audio"}:
-        raise ValueError("Payload field 'inputType' must be text, image, or audio.")
+    if input_type not in {"text", "image", "audio", "image_to_text"}:
+        raise ValueError("Payload field 'inputType' must be text, image, audio, or image_to_text.")
 
     if input_type == "text":
         text = payload.get("text", "")
@@ -161,6 +171,11 @@ def main():
         if not isinstance(source, str) or not source.strip():
             raise ValueError("Payload field 'source' is required for image input.")
         candidates, raw = _infer_image(model, source)
+    elif input_type == "image_to_text":
+        source = payload.get("source", "")
+        if not isinstance(source, str) or not source.strip():
+            raise ValueError("Payload field 'source' is required for image_to_text input.")
+        candidates, raw = _infer_image_to_text(model, source)
     else:
         source = payload.get("source", "")
         if not isinstance(source, str) or not source.strip():

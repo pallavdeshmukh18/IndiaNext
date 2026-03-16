@@ -36,7 +36,10 @@ const MODEL_REGISTRY = {
     "facebook/bart-large-mnli",
   aiGeneratedText:
     process.env.HF_MODEL_AI_GENERATED_TEXT ||
-    "openai-community/roberta-base-openai-detector"
+    "openai-community/roberta-base-openai-detector",
+  screenOcr:
+    process.env.HF_MODEL_SCREEN_OCR ||
+    "microsoft/trocr-base-printed"
 };
 
 function getApiToken() {
@@ -255,6 +258,49 @@ function unwrapCandidates(rawData) {
   }
 
   return [];
+}
+
+function unwrapGeneratedText(rawData) {
+  if (!rawData) return "";
+
+  if (typeof rawData === "string") {
+    return rawData.trim();
+  }
+
+  if (Array.isArray(rawData)) {
+    const parts = rawData
+      .map((item) => unwrapGeneratedText(item))
+      .filter(Boolean);
+    return parts.join(" ").trim();
+  }
+
+  if (typeof rawData === "object") {
+    if (rawData.error) {
+      throw new Error(String(rawData.error));
+    }
+
+    if (typeof rawData.generated_text === "string") {
+      return rawData.generated_text.trim();
+    }
+
+    if (Array.isArray(rawData.generated_text)) {
+      return rawData.generated_text.map((item) => String(item || "")).join(" ").trim();
+    }
+
+    if (Array.isArray(rawData.text)) {
+      return rawData.text.map((item) => String(item || "")).join(" ").trim();
+    }
+
+    if (typeof rawData.text === "string") {
+      return rawData.text.trim();
+    }
+
+    if (rawData.raw) {
+      return unwrapGeneratedText(rawData.raw);
+    }
+  }
+
+  return "";
 }
 
 async function postJsonModel(modelId, payload) {
@@ -491,10 +537,40 @@ async function classifyMedia(modelId, mediaInput, fallbackContentType) {
   };
 }
 
+async function extractTextFromImage(modelId, mediaInput) {
+  let raw;
+  const resolvedModelId = resolveModelId(modelId);
+
+  if (shouldUseLocalInference()) {
+    const source = resolveLocalSource(mediaInput);
+    raw = await runLocalInference({
+      model: resolvedModelId,
+      inputType: "image_to_text",
+      source
+    });
+  } else {
+    const media = await readMediaInput(mediaInput);
+    raw = await postBinaryModel(
+      modelId,
+      media.buffer,
+      media.contentType || "image/jpeg"
+    );
+  }
+
+  const text = unwrapGeneratedText(raw);
+
+  return {
+    model: resolvedModelId,
+    text,
+    raw
+  };
+}
+
 module.exports = {
   MODEL_REGISTRY,
   hasHfToken,
   getModelRuntime,
   classifyText,
-  classifyMedia
+  classifyMedia,
+  extractTextFromImage
 };

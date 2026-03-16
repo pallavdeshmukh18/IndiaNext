@@ -749,5 +749,7 @@ async function analyzeUnifiedThreatInput(input) {
 
 module.exports = {
   runSecuritySuiteScan,
-  analyzeUnifiedThreatInput
+  analyzeUnifiedThreatInput,
+  detectPhishingMessaging,
+  detectMaliciousUrl
 };

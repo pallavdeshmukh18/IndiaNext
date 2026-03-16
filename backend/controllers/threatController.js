@@ -2,6 +2,7 @@ const { detectThreat } = require('../services/mlService');
 const { getRecommendation } = require('../services/recommendationService');
 const { saveScanResult } = require('../services/logService');
 const { runSecuritySuiteScan } = require('../services/securitySuiteService');
+const { analyzeLiveScreen } = require('../services/liveScreenAnalysisService');
 
 const FALLBACK_USER_ID = "000000000000000000000000";
 
@@ -165,8 +166,40 @@ const quickAnalyzeThreat = async (req, res) => {
     }
 };
 
+const analyzeLiveScreenThreat = async (req, res) => {
+    try {
+        const { pageUrl, title, pageSignals, screenshotBase64, pageText } = req.body || {};
+
+        if (!pageUrl && !pageSignals && !pageText && !screenshotBase64) {
+            return res.status(400).json({
+                error: "Page signals, page text, or screenshot input is required for live-screen analysis."
+            });
+        }
+
+        const analysisOutput = await analyzeLiveScreen({
+            pageUrl,
+            title,
+            pageSignals,
+            screenshotBase64,
+            pageText
+        });
+        const recommendation = getRecommendation(analysisOutput.threatType, analysisOutput.riskScore);
+
+        return res.json({
+            ...analysisOutput,
+            recommendation
+        });
+    } catch (error) {
+        console.error("Error in live screen threat analysis:", error);
+        return res.status(500).json({
+            error: "Internal server error during live screen analysis."
+        });
+    }
+};
+
 module.exports = {
     analyzeThreat,
     quickAnalyzeThreat,
-    analyzeSecuritySuite
+    analyzeSecuritySuite,
+    analyzeLiveScreenThreat
 };

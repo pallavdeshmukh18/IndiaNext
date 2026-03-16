@@ -11,6 +11,7 @@ This backend now supports a multi-model security scan endpoint using the followi
 - `protectai/deberta-v3-base-prompt-injection` (prompt injection)
 - `ehsanaghaei/SecureBERT` (anomalous log behavior)
 - `openai-community/roberta-base-openai-detector` (AI-generated text detection)
+- `microsoft/trocr-base-printed` (screen OCR for screenshot-based phishing analysis)
 
 ## Environment
 
@@ -44,6 +45,7 @@ Optional model overrides are supported via env vars:
 - `HF_MODEL_PROMPT_INJECTION`
 - `HF_MODEL_ANOMALY_LOGS`
 - `HF_MODEL_AI_GENERATED_TEXT`
+- `HF_MODEL_SCREEN_OCR`
 
 ## API-first (recommended)
 

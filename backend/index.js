@@ -15,7 +15,7 @@ const authRoutes = require("./routes/authRoutes");
 const { sendInteractiveMessage } = require("./bot/twilioInteractive");
 const { handleIncomingWhatsappMessage } = require("./bot/whatsappBot");
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "12mb" }));
 
 const PORT = process.env.PORT || 8000;
 
