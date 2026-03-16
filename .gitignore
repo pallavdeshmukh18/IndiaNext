@@ -3,4 +3,3 @@ ML/phishing_mail/phishing_email.csv
 __pycache__/
 ML/hf_local/models/
 ML/hf_local/hf_cache/
-backend/.env.models

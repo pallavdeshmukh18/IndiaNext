@@ -17,8 +17,8 @@ import json
 import base64
 import tempfile
 from pathlib import Path
-from urllib.parse import urlparse
 
+import librosa
 import requests
 from PIL import Image
 from transformers import pipeline
@@ -110,8 +110,7 @@ def _load_audio_source(source: str) -> str:
 def _infer_text(model: str, text: str):
     clf = pipeline(
         task="text-classification",
-        model=model,
-        local_files_only=True
+        model=model
     )
     out = clf(text[:4000], top_k=5, truncation=True)
     return _as_candidates(out), out
@@ -120,8 +119,7 @@ def _infer_text(model: str, text: str):
 def _infer_image(model: str, source: str):
     clf = pipeline(
         task="image-classification",
-        model=model,
-        local_files_only=True
+        model=model
     )
     img = _load_image_source(source)
     out = clf(img, top_k=5)
@@ -131,10 +129,14 @@ def _infer_image(model: str, source: str):
 def _infer_audio(model: str, source: str):
     clf = pipeline(
         task="audio-classification",
-        model=model,
-        local_files_only=True
+        model=model
     )
-    audio_input = _load_audio_source(source)
+    audio_path = _load_audio_source(source)
+    audio_array, sampling_rate = librosa.load(audio_path, sr=16000, mono=True)
+    audio_input = {
+        "array": audio_array,
+        "sampling_rate": sampling_rate,
+    }
     out = clf(audio_input, top_k=5)
     return _as_candidates(out), out
 

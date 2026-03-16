@@ -93,7 +93,9 @@ async function detectPhishingMessaging(text) {
   try {
     const prediction = await classifyText(MODEL_REGISTRY.phishingMessaging, normalized);
     const label = safeToLower(prediction.label);
+    const isLabel1 = label === "label_1"; // 1 is typically malicious in this model
     const positive =
+      isLabel1 ||
       label.includes("phish") ||
       label.includes("spam") ||
       label.includes("fraud") ||
@@ -185,16 +187,16 @@ async function detectMaliciousUrl(urlInput) {
     let threatType = "None";
     let riskScore = 20;
 
-    if (label.includes("malware")) {
+    if (label.includes("malware") || label === "label_3") {
       threatType = "Malware URL";
       riskScore = Math.max(90, Math.round(prediction.score * 100));
-    } else if (label.includes("phish")) {
+    } else if (label.includes("phish") || label === "label_2") {
       threatType = "Phishing URL";
       riskScore = Math.max(82, Math.round(prediction.score * 100));
-    } else if (label.includes("deface")) {
+    } else if (label.includes("deface") || label === "label_1") {
       threatType = "Defacement URL";
       riskScore = Math.max(65, Math.round(prediction.score * 100));
-    } else if (label.includes("benign") || label.includes("safe")) {
+    } else if (label.includes("benign") || label.includes("safe") || label === "label_0") {
       threatType = "None";
       riskScore = Math.min(25, Math.round((1 - prediction.score) * 30));
     } else {
@@ -338,6 +340,7 @@ async function detectAnomalousLog(logText) {
     const prediction = await classifyText(MODEL_REGISTRY.anomalyLogs, normalized);
     const label = safeToLower(prediction.label);
     const positive =
+      label === "label_1" ||
       label.includes("anomaly") ||
       label.includes("attack") ||
       label.includes("intrusion") ||

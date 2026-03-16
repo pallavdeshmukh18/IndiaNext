@@ -4,37 +4,37 @@
     {
       "env": "HF_MODEL_PHISHING_MESSAGING",
       "repo_id": "aamoshdahal/email-phishing-distilbert-finetuned",
-      "revision": "main"
+      "revision": "f9d211125fcb6e85cf73630957667bc2a6e93ed3"
     },
     {
       "env": "HF_MODEL_MALICIOUS_URL",
       "repo_id": "r3ddkahili/final-complete-malicious-url-model",
-      "revision": "main"
+      "revision": "1e47e821fa91edf617b828fb99963dc84edc61e3"
     },
     {
       "env": "HF_MODEL_DEEPFAKE_IMAGE",
       "repo_id": "prithivMLmods/Deep-Fake-Detector-v2-Model",
-      "revision": "main"
+      "revision": "3a99ae26f52c7ac7c3a53103b6cf3a8b617f7093"
     },
     {
       "env": "HF_MODEL_DEEPFAKE_AUDIO",
       "repo_id": "mo-thecreator/Deepfake-audio-detection",
-      "revision": "main"
+      "revision": "e4d9874b493362149cec96ced85f00b00b1a04c0"
     },
     {
       "env": "HF_MODEL_PROMPT_INJECTION",
       "repo_id": "protectai/deberta-v3-base-prompt-injection",
-      "revision": "main"
+      "revision": "447ec1ac62f47c9be5a0bc65e8d52569b37315a6"
     },
     {
       "env": "HF_MODEL_ANOMALY_LOGS",
       "repo_id": "ehsanaghaei/SecureBERT",
-      "revision": "main"
+      "revision": "3a47918dd874e5c769efd152b51c5756a953fb67"
     },
     {
       "env": "HF_MODEL_AI_GENERATED_TEXT",
       "repo_id": "openai-community/roberta-base-openai-detector",
-      "revision": "main"
+      "revision": "6cba99c003b711c7fe94f8a3aa2be35a792cb6fa"
     }
   ]
 }

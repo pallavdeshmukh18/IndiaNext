@@ -22,6 +22,8 @@ import os
 import re
 import shutil
 import sys
+import stat
+import time
 from pathlib import Path
 
 
@@ -36,10 +38,36 @@ def _safe_dir_name(repo_id: str) -> str:
     return repo_id.replace("/", "__")
 
 
+def _on_rm_error(func, path, exc_info):
+    try:
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+    except Exception:
+        pass
+
+
+def _remove_tree_with_retries(dst: Path, retries: int = 3, delay_seconds: float = 1.0) -> bool:
+    if not dst.exists():
+        return True
+
+    for _ in range(retries):
+        try:
+            shutil.rmtree(dst, onexc=_on_rm_error)
+            return True
+        except PermissionError:
+            time.sleep(delay_seconds)
+        except FileNotFoundError:
+            return True
+
+    return not dst.exists()
+
+
 def _sync_dir(src: Path, dst: Path) -> None:
-    if dst.exists():
-        shutil.rmtree(dst)
-    shutil.copytree(src, dst)
+    _remove_tree_with_retries(dst)
+
+    # Windows can occasionally keep model files locked or race on directory creation;
+    # update files in place instead of failing the whole setup run.
+    shutil.copytree(src, dst, dirs_exist_ok=True)
 
 
 def _load_lock(lock_path: Path) -> dict:
@@ -134,8 +162,6 @@ def main() -> None:
     script_dir = Path(__file__).resolve().parent
     repo_root = script_dir.parent.parent
     backend_env = repo_root / "backend" / ".env"
-    backend_env_models = repo_root / "backend" / ".env.models"
-
     models_dir.mkdir(parents=True, exist_ok=True)
     cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -191,13 +217,6 @@ def main() -> None:
     if updated_lock:
         _write_lock(lock_path, lock_data)
         print(f"[setup_models] updated lock revisions in {lock_path}")
-
-    # Always write a generated env snippet file for easy sharing.
-    backend_env_models.write_text(
-        "\n".join([f"{k}={v}" for k, v in env_updates.items()]) + "\n",
-        encoding="utf-8"
-    )
-    print(f"[setup_models] wrote backend env snippet: {backend_env_models}")
 
     if not args.no_update_env:
         _upsert_env_file(backend_env, env_updates)

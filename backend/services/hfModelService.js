@@ -8,6 +8,7 @@ const HF_TIMEOUT_MS = Number(process.env.HF_TIMEOUT_MS || 30000);
 const HF_INFERENCE_MODE = String(process.env.HF_INFERENCE_MODE || "local").toLowerCase();
 const PYTHON_BIN = process.env.PYTHON_BIN || "python";
 const LOCAL_INFER_SCRIPT = path.join(__dirname, "..", "..", "ML", "hf_local", "infer.py");
+const LOCAL_MODELS_DIR = path.join(__dirname, "..", "..", "ML", "hf_local", "models");
 
 const MODEL_REGISTRY = {
   phishingMessaging:
@@ -72,6 +73,34 @@ function buildHeaders(contentType = "application/json") {
   }
 
   return headers;
+}
+
+function getLocalModelPath(modelId) {
+  if (!modelId || typeof modelId !== "string") return modelId;
+
+  if (path.isAbsolute(modelId)) {
+    return modelId;
+  }
+
+  const localPath = path.join(LOCAL_MODELS_DIR, modelId.replace(/\//g, "__"));
+  return localPath;
+}
+
+function resolveModelId(modelId) {
+  if (!shouldUseLocalInference()) return modelId;
+
+  const localPath = getLocalModelPath(modelId);
+  if (localPath && localPath !== modelId) {
+    try {
+      if (require("fs").existsSync(localPath)) {
+        return localPath;
+      }
+    } catch (_) {
+      return modelId;
+    }
+  }
+
+  return modelId;
 }
 
 function unwrapCandidates(rawData) {
@@ -291,10 +320,11 @@ async function classifyText(modelId, text, parameters = {}) {
   }
 
   let raw;
+  const resolvedModelId = resolveModelId(modelId);
 
   if (shouldUseLocalInference()) {
     raw = await runLocalInference({
-      model: modelId,
+      model: resolvedModelId,
       inputType: "text",
       text: text.slice(0, 4000),
       parameters
@@ -314,7 +344,7 @@ async function classifyText(modelId, text, parameters = {}) {
   const top = candidates[0] || { label: "unknown", score: 0 };
 
   return {
-    model: modelId,
+    model: resolvedModelId,
     label: top.label,
     score: Number(top.score || 0),
     candidates,
@@ -324,6 +354,7 @@ async function classifyText(modelId, text, parameters = {}) {
 
 async function classifyMedia(modelId, mediaInput, fallbackContentType) {
   let raw;
+  const resolvedModelId = resolveModelId(modelId);
 
   if (shouldUseLocalInference()) {
     const source = resolveLocalSource(mediaInput);
@@ -331,7 +362,7 @@ async function classifyMedia(modelId, mediaInput, fallbackContentType) {
       ? "audio"
       : "image";
     raw = await runLocalInference({
-      model: modelId,
+      model: resolvedModelId,
       inputType,
       source
     });
@@ -348,7 +379,7 @@ async function classifyMedia(modelId, mediaInput, fallbackContentType) {
   const top = candidates[0] || { label: "unknown", score: 0 };
 
   return {
-    model: modelId,
+    model: resolvedModelId,
     label: top.label,
     score: Number(top.score || 0),
     candidates,
