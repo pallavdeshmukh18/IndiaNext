@@ -4,85 +4,117 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IndiaNext Threat Lens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <main class="app">
-      <header class="header">
-        <h1>Threat Lens</h1>
-        <p>OCR the current screen, inspect the page DOM, and flag phishing patterns live.</p>
-      </header>
+    <main class="app-shell">
+      <section class="app glass-panel">
+        <header class="header">
+          <div class="brand-row">
+            <div class="brand-mark" aria-hidden="true">
+              <span class="brand-mark-dot"></span>
+            </div>
+            <div class="brand-copy">
+              <p class="kicker">IndiaNext Security</p>
+              <h1>Threat Lens</h1>
+            </div>
+            <span class="mode-pill">EXTENSION</span>
+          </div>
+          <p class="header-copy">
+            OCR the current screen, inspect page DOM signals, and surface phishing risk live.
+          </p>
+        </header>
 
-      <label class="field-label" for="backendUrl">Backend URL</label>
-      <input id="backendUrl" class="input" type="url" value="http://localhost:8000" />
+        <section class="control-card glass-card">
+          <p class="section-label">
+            <span class="section-label-dot"></span>
+            Scanner Controls
+          </p>
 
-      <button id="analyzeBtn" class="btn-primary">Scan Current Screen</button>
+          <label class="field-label" for="backendUrl">Backend URL</label>
+          <input id="backendUrl" class="input" type="url" value="http://localhost:8000" />
 
-      <label class="toggle-row" for="liveModeToggle">
-        <input id="liveModeToggle" type="checkbox" />
-        <span>Live monitor (every 8s)</span>
-      </label>
+          <button id="analyzeBtn" class="btn-primary">Scan Current Screen</button>
 
-      <p id="statusText" class="status-text">Ready to analyze.</p>
-      <p id="lastAnalyzed" class="meta-text hidden"></p>
+          <label class="toggle-row" for="liveModeToggle">
+            <input id="liveModeToggle" type="checkbox" />
+            <span>Live monitor (every 8s)</span>
+          </label>
+        </section>
 
-      <section id="previewCard" class="preview-card hidden" aria-live="polite">
-        <img id="screenshotPreview" alt="Captured screenshot" />
+        <div class="status-wrap">
+          <p id="statusText" class="status-text">Ready to analyze.</p>
+          <p id="lastAnalyzed" class="meta-text hidden"></p>
+        </div>
+
+        <section id="previewCard" class="preview-card glass-card hidden" aria-live="polite">
+          <p class="section-label small-label">
+            <span class="section-label-dot"></span>
+            Captured Frame
+          </p>
+          <img id="screenshotPreview" alt="Captured screenshot" />
+        </section>
+
+        <section id="resultCard" class="result-card glass-card hidden" aria-live="polite">
+          <div class="result-top">
+            <div>
+              <p class="result-label">Risk Score</p>
+              <p id="riskScore" class="risk-score">0%</p>
+            </div>
+            <span id="riskBadge" class="risk-badge">SAFE</span>
+          </div>
+
+          <div class="meter-wrap">
+            <div class="meter-bg">
+              <div id="meterFill" class="meter-fill"></div>
+            </div>
+          </div>
+
+          <div class="result-block">
+            <p class="result-label">Threat Type</p>
+            <p id="threatType" class="result-text">None</p>
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-card">
+              <p class="result-label">Detected Brand</p>
+              <p id="detectedBrand" class="result-text">None</p>
+            </div>
+            <div class="detail-card">
+              <p class="result-label">Actual Domain</p>
+              <p id="actualDomain" class="result-text">Unknown</p>
+            </div>
+          </div>
+
+          <div class="result-block">
+            <p class="result-label">Why</p>
+            <p id="explanation" class="result-text"></p>
+          </div>
+
+          <div class="result-block">
+            <p class="result-label">Evidence</p>
+            <ul id="evidenceList" class="evidence-list"></ul>
+          </div>
+
+          <div class="result-block">
+            <p class="result-label">OCR Excerpt</p>
+            <p id="ocrText" class="result-text result-mono">No screenshot OCR yet.</p>
+          </div>
+
+          <div class="result-block">
+            <p class="result-label">Recommendation</p>
+            <p id="recommendation" class="result-text"></p>
+          </div>
+        </section>
+
+        <p id="errorText" class="error-text hidden"></p>
       </section>
-
-      <section id="resultCard" class="result-card hidden" aria-live="polite">
-        <div class="result-top">
-          <div>
-            <p class="result-label">Risk Score</p>
-            <p id="riskScore" class="risk-score">0%</p>
-          </div>
-          <span id="riskBadge" class="risk-badge">SAFE</span>
-        </div>
-
-        <div class="meter-wrap">
-          <div class="meter-bg">
-            <div id="meterFill" class="meter-fill"></div>
-          </div>
-        </div>
-
-        <div class="result-block">
-          <p class="result-label">Threat Type</p>
-          <p id="threatType" class="result-text">None</p>
-        </div>
-
-        <div class="detail-grid">
-          <div class="detail-card">
-            <p class="result-label">Detected Brand</p>
-            <p id="detectedBrand" class="result-text">None</p>
-          </div>
-          <div class="detail-card">
-            <p class="result-label">Actual Domain</p>
-            <p id="actualDomain" class="result-text">Unknown</p>
-          </div>
-        </div>
-
-        <div class="result-block">
-          <p class="result-label">Why</p>
-          <p id="explanation" class="result-text"></p>
-        </div>
-
-        <div class="result-block">
-          <p class="result-label">Evidence</p>
-          <ul id="evidenceList" class="evidence-list"></ul>
-        </div>
-
-        <div class="result-block">
-          <p class="result-label">OCR Excerpt</p>
-          <p id="ocrText" class="result-text result-mono">No screenshot OCR yet.</p>
-        </div>
-
-        <div class="result-block">
-          <p class="result-label">Recommendation</p>
-          <p id="recommendation" class="result-text"></p>
-        </div>
-      </section>
-
-      <p id="errorText" class="error-text hidden"></p>
     </main>
 
     <script src="popup.js"></script>

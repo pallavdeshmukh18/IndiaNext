@@ -1,7 +1,36 @@
 const DEFAULT_BACKEND_URL = "http://localhost:8000";
 const LIVE_SCREEN_ANALYZE_PATH = "/api/threats/live-screen-analyze";
 const LIVE_SCAN_INTERVAL_MS = 8000;
-const REQUEST_TIMEOUT_MS = 10000;
+const REQUEST_TIMEOUT_MS = 20000;
+const SUSPICIOUS_KEYWORDS = [
+  "login",
+  "sign in",
+  "signin",
+  "verify",
+  "account",
+  "password",
+  "otp",
+  "2fa",
+  "bank",
+  "secure",
+  "suspended",
+  "confirm"
+];
+const SUSPICIOUS_LINK_PATTERNS = [
+  /login/i,
+  /verify/i,
+  /account/i,
+  /secure/i,
+  /update/i,
+  /password/i,
+  /signin/i,
+  /session/i,
+  /redirect/i,
+  /%40/i,
+  /@/,
+  /bit\.ly/i,
+  /tinyurl/i
+];
 
 const backendUrlInput = document.getElementById("backendUrl");
 const analyzeBtn = document.getElementById("analyzeBtn");
@@ -59,7 +88,8 @@ async function runAnalysis(options = {}) {
       throw new Error("No active tab found.");
     }
 
-    const pageSignals = await extractPageSignals(tab.id);
+    const rawPageSignals = await extractPageSignals(tab.id);
+    const pageSignals = normalizeSignalsForBackend(rawPageSignals);
     let screenshotDataUrl = null;
 
     if (options.captureScreenshot && typeof tab.windowId === "number") {
@@ -69,7 +99,7 @@ async function runAnalysis(options = {}) {
     setBusyState(true, screenshotDataUrl ? "Running OCR and phishing checks..." : "Analyzing page signals...");
     const backendUrl = normalizeBackendUrl(backendUrlInput.value);
 
-    const response = await fetch(`${backendUrl}${LIVE_SCREEN_ANALYZE_PATH}`, {
+    const response = await fetchWithTimeout(`${backendUrl}${LIVE_SCREEN_ANALYZE_PATH}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -84,12 +114,12 @@ async function runAnalysis(options = {}) {
       })
     });
 
-    const data = await safeReadJson(response);
+    const payload = await safeReadResponse(response);
     if (!response.ok) {
-      throw new Error(data.error || "Analysis failed.");
+      throw new Error(buildBackendErrorMessage(response, payload));
     }
 
-    renderResult(pageSignals, data);
+    renderResult(pageSignals, payload);
     updateLastAnalyzed(new Date().toISOString());
     setBusyState(false, "Page signals sent to backend.");
   } catch (error) {
@@ -127,6 +157,133 @@ function stopLiveMonitoring() {
   }
 }
 
+function normalizeText(value, max = 6000) {
+  if (typeof value !== "string") return "";
+  return value.replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function countKeywordHits(text) {
+  const haystack = normalizeText(text, 12000).toLowerCase();
+
+  return SUSPICIOUS_KEYWORDS.reduce((count, keyword) => {
+    const matches = haystack.match(new RegExp(`\\b${escapeRegExp(keyword.toLowerCase())}\\b`, "g"));
+    return count + (matches ? matches.length : 0);
+  }, 0);
+}
+
+function getFormDetails(pageSignals = {}) {
+  if (Array.isArray(pageSignals.formDetails)) {
+    return pageSignals.formDetails;
+  }
+
+  if (Array.isArray(pageSignals.forms)) {
+    return pageSignals.forms;
+  }
+
+  return [];
+}
+
+function normalizeSignalsForBackend(pageSignals = {}) {
+  const formDetails = getFormDetails(pageSignals);
+  const visibleText = normalizeText(pageSignals.visibleText || pageSignals.pageText || "", 8000);
+  const metaDescription = normalizeText(pageSignals.metaDescription || "", 500);
+  const links = Array.isArray(pageSignals.links)
+    ? pageSignals.links.filter((link) => typeof link === "string" && link.trim())
+    : [];
+  const linkCount = Number.isFinite(Number(pageSignals.linkCount))
+    ? Number(pageSignals.linkCount)
+    : links.length;
+  const externalLinkCount = Number.isFinite(Number(pageSignals.externalLinkCount))
+    ? Number(pageSignals.externalLinkCount)
+    : links.filter((link) => {
+        try {
+          return new URL(link, pageSignals.url || window.location.href).hostname !== (pageSignals.domain || window.location.hostname);
+        } catch (_error) {
+          return false;
+        }
+      }).length;
+  const suspiciousLinkCount = Number.isFinite(Number(pageSignals.suspiciousLinkCount))
+    ? Number(pageSignals.suspiciousLinkCount)
+    : links.filter((link) => SUSPICIOUS_LINK_PATTERNS.some((pattern) => pattern.test(link))).length;
+  const passwordFields = Number.isFinite(Number(pageSignals.passwordFields))
+    ? Number(pageSignals.passwordFields)
+    : pageSignals.hasPasswordField
+      ? 1
+      : formDetails.reduce((count, form) => {
+          const inputs = Array.isArray(form?.inputs) ? form.inputs : [];
+          return count + inputs.filter((input) => String(input?.type || "").toLowerCase() === "password").length;
+        }, 0);
+  const suspiciousKeywordHits = Number.isFinite(Number(pageSignals.suspiciousKeywordHits))
+    ? Number(pageSignals.suspiciousKeywordHits)
+    : countKeywordHits([pageSignals.title, metaDescription, visibleText].filter(Boolean).join(" "));
+  const hasLoginForm = Boolean(pageSignals.hasLoginForm) || passwordFields > 0 || suspiciousKeywordHits > 0;
+
+  return {
+    ...pageSignals,
+    url: pageSignals.url || window.location.href,
+    domain: pageSignals.domain || window.location.hostname,
+    title: pageSignals.title || document.title || "",
+    forms: formDetails.length,
+    formDetails,
+    visibleText,
+    pageText: visibleText,
+    metaDescription,
+    links,
+    linkCount,
+    externalLinkCount,
+    suspiciousLinkCount,
+    suspiciousKeywordHits,
+    passwordFields,
+    hasPasswordField: passwordFields > 0,
+    hasLoginForm
+  };
+}
+
+function buildInputPayload(pageSignals = {}) {
+  const formDetails = getFormDetails(pageSignals);
+  const formSummary = formDetails
+    .map((form) => {
+      const action = String(form?.action || "");
+      const method = String(form?.method || "get").toUpperCase();
+      const fields = Array.isArray(form?.inputs)
+        ? form.inputs.map((input) => `${input?.type || "field"}:${input?.name || "unnamed"}`).join(", ")
+        : "";
+
+      return [action, method, fields].filter(Boolean).join(" ");
+    })
+    .filter(Boolean)
+    .join(" | ");
+
+  return [
+    pageSignals.title,
+    pageSignals.url,
+    pageSignals.domain,
+    pageSignals.metaDescription,
+    pageSignals.visibleText || pageSignals.pageText,
+    formSummary,
+    Array.isArray(pageSignals.links) ? pageSignals.links.join(" ") : ""
+  ]
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, 12000);
+}
+
+function getFormCount(pageSignals = {}) {
+  if (Array.isArray(pageSignals.formDetails)) {
+    return pageSignals.formDetails.length;
+  }
+
+  if (Array.isArray(pageSignals.forms)) {
+    return pageSignals.forms.length;
+  }
+
+  return Number(pageSignals.forms || 0);
+}
+
 function renderResult(pageSignals, backendData) {
   const backendScore = Number(
     backendData.riskScore ??
@@ -144,7 +301,7 @@ function renderResult(pageSignals, backendData) {
     backendData.summary ||
     [
       `Domain: ${pageSignals.domain || "unknown"}`,
-      `Forms detected: ${pageSignals.forms.length}`,
+      `Forms detected: ${getFormCount(pageSignals)}`,
       `Password field present: ${pageSignals.hasPasswordField ? "Yes" : "No"}`,
       `Login form heuristic: ${pageSignals.hasLoginForm ? "Triggered" : "Not triggered"}`
     ].join(" | ");
@@ -170,15 +327,15 @@ function renderResult(pageSignals, backendData) {
   riskBadge.classList.add(badgeClass);
   riskBadge.textContent = badgeText;
 
-  threatType.textContent = data.threatType || "None";
-  explanation.textContent = data.explanation || "No explanation available.";
-  recommendation.textContent = data.recommendation || "No recommendation available.";
-  detectedBrand.textContent = data.brand || "None detected";
-  actualDomain.textContent = data.actualDomain || "Unknown";
-  ocrText.textContent = data.ocrText || "No OCR text extracted from the screenshot.";
+  threatType.textContent = derivedThreatType || "None";
+  explanation.textContent = derivedExplanation || "No explanation available.";
+  recommendation.textContent = derivedRecommendation || "No recommendation available.";
+  detectedBrand.textContent = backendData.brand || "None detected";
+  actualDomain.textContent = backendData.actualDomain || pageSignals.domain || "Unknown";
+  ocrText.textContent = backendData.ocrText || "No OCR text extracted from the screenshot.";
 
   evidenceList.innerHTML = "";
-  const evidence = Array.isArray(data.evidence) ? data.evidence : [];
+  const evidence = Array.isArray(backendData.evidence) ? backendData.evidence : [];
   if (evidence.length) {
     for (const item of evidence) {
       const li = document.createElement("li");
@@ -253,6 +410,7 @@ function collectPageSignalsInPageContext() {
   const normalizeText = (value) =>
     typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
   const pageText = normalizeText(document.body?.innerText || "").slice(0, 5000);
+  const metaDescription = normalizeText(document.querySelector('meta[name="description"]')?.content || "");
   const forms = Array.from(document.querySelectorAll("form")).map((formElement) => ({
     action: normalizeText(formElement.getAttribute("action")) || window.location.href,
     method: (normalizeText(formElement.getAttribute("method")) || "get").toLowerCase(),
@@ -261,6 +419,10 @@ function collectPageSignalsInPageContext() {
       name: normalizeText(field.getAttribute("name")) || normalizeText(field.getAttribute("id"))
     }))
   }));
+  const links = Array.from(document.querySelectorAll("a[href]"))
+    .map((anchor) => anchor.href)
+    .filter(Boolean)
+    .slice(0, 250);
   const hasPasswordField = Boolean(document.querySelector("input[type='password']"));
   const hasLoginForm =
     hasPasswordField ||
@@ -272,10 +434,16 @@ function collectPageSignalsInPageContext() {
     url: window.location.href,
     domain: window.location.hostname,
     title: document.title || "",
+    metaDescription,
+    visibleText: pageText,
     forms,
+    formDetails: forms,
+    passwordFields: hasPasswordField ? 1 : 0,
     hasPasswordField,
     hasLoginForm,
-    pageText
+    pageText,
+    links,
+    linkCount: links.length
   };
 }
 
@@ -375,12 +543,50 @@ function normalizeBackendUrl(url) {
   return clean.endsWith("/") ? clean.slice(0, -1) : clean;
 }
 
-async function safeReadJson(response) {
+async function safeReadResponse(response) {
   try {
-    return await response.json();
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      return await response.json();
+    }
+
+    const text = await response.text();
+    return {
+      rawText: text
+    };
   } catch (error) {
     return {};
   }
+}
+
+function truncateText(value, max = 220) {
+  const normalized = normalizeText(String(value || ""), max + 1);
+  if (normalized.length <= max) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, max - 1)}...`;
+}
+
+function buildBackendErrorMessage(response, payload = {}) {
+  if (payload && typeof payload.error === "string" && payload.error.trim()) {
+    return payload.error.trim();
+  }
+
+  if (response.status === 404) {
+    return "Backend route /api/threats/live-screen-analyze was not found. Restart the backend and reload the extension.";
+  }
+
+  if (response.status === 413) {
+    return "Screenshot payload was too large for the backend to accept.";
+  }
+
+  if (payload && typeof payload.rawText === "string" && payload.rawText.trim()) {
+    return `Backend error ${response.status}: ${truncateText(payload.rawText)}`;
+  }
+
+  return `Backend error ${response.status}.`;
 }
 
 async function fetchWithTimeout(url, options) {
