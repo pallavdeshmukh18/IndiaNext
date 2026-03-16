@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 
 const ScanLogSchema = new mongoose.Schema(
     {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
         inputType: {
             type: String,
             required: true

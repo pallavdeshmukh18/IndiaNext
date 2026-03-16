@@ -10,11 +10,13 @@ const threatRoutes = require("./routes/threatRoutes");
 const historyRoutes = require("./routes/historyRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const alertRoutes = require("./routes/alertRoutes");
+const authRoutes = require("./routes/authRoutes");
 app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 8000;
 
+app.use("/api/auth", authRoutes);
 app.use("/api/threats", threatRoutes);
 app.use("/api", historyRoutes);
 app.use("/api", analyticsRoutes);
