@@ -150,6 +150,53 @@ function buildEmailPhishingExplanation(isPhishing, indicators = [], phishingProb
   return "This email does not look strongly phishy based on its wording and structure.";
 }
 
+function computeHeuristicPhishingProbability(emailText = "", emailData = {}) {
+  const normalized = safeLower(emailText);
+  const senderDomain = safeLower(emailData.senderDomain || "");
+  const linkDomains = Array.isArray(emailData.linkDomains) ? emailData.linkDomains.map(safeLower) : [];
+  const attachments = Array.isArray(emailData.attachments) ? emailData.attachments : [];
+
+  let score = 0.08;
+
+  if (/(urgent|immediately|asap|within 24 hours|act now)/.test(normalized)) {
+    score += 0.13;
+  }
+
+  if (/(verify your account|reset your password|confirm your identity|login to continue)/.test(normalized)) {
+    score += 0.16;
+  }
+
+  if (/(otp|one-time password|passcode|security code)/.test(normalized)) {
+    score += 0.1;
+  }
+
+  if (/(suspend|suspension|deactivated|locked|disabled)/.test(normalized)) {
+    score += 0.11;
+  }
+
+  if (/(bank|payroll|invoice|wallet|gift card|refund)/.test(normalized)) {
+    score += 0.09;
+  }
+
+  if (Array.isArray(emailData.links) && emailData.links.length > 0) {
+    score += Math.min(0.04 * emailData.links.length, 0.14);
+  }
+
+  if (linkDomains.some((domain) => domain && senderDomain && !domain.includes(senderDomain) && !senderDomain.includes(domain))) {
+    score += 0.08;
+  }
+
+  if (attachments.length > 0) {
+    score += Math.min(attachments.length * 0.015, 0.05);
+  }
+
+  if (normalized.length > 1200) {
+    score += 0.03;
+  }
+
+  return clamp(Number(score.toFixed(4)), 0, 0.99);
+}
+
 async function analyzeEmail(emailData = {}) {
   const emailText = buildEmailModelInput(emailData);
 
@@ -211,8 +258,8 @@ async function analyzeEmail(emailData = {}) {
     };
   } catch (error) {
     const indicators = buildEmailPhishingIndicators(emailText, emailData);
-    const heuristicScore = clamp(indicators.length * 18, 0, 100);
-    const probability = clamp(heuristicScore / 100, 0, 1);
+    const probability = computeHeuristicPhishingProbability(emailText, emailData);
+    const heuristicScore = Math.round(probability * 100);
     const riskLevel = mapRiskLevel(probability);
     const isPhishing = heuristicScore >= 55;
     const explanationText = isPhishing

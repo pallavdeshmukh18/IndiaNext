@@ -35,10 +35,15 @@ function decodeBase64Url(content = "") {
 
 function stripHtml(html = "") {
   return html
+    .replace(/<(br|\/p|\/div|\/li|\/tr|\/h[1-6])\b[^>]*>/gi, "\n")
+    .replace(/<(p|div|li|tr|h[1-6])\b[^>]*>/gi, "\n")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/\r/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
     .trim();
 }
 
@@ -103,7 +108,7 @@ function parseEmailMessage(email) {
   const senderName = sender.replace(SENDER_EMAIL_REGEX, "").replace(/"/g, "").trim() || senderEmail;
   const sentAt = extractHeader(payload.headers, "Date") || email.internalDate || "";
   const body =
-    plainTextBody.trim() ||
+    plainTextBody.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim() ||
     stripHtml(htmlBody) ||
     stripHtml(decodeBase64Url(payload.body?.data || "")) ||
     email.snippet ||

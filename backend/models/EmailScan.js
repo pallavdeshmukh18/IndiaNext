@@ -23,6 +23,10 @@ const emailScanSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    sentAt: {
+      type: String,
+      default: "",
+    },
     links: {
       type: [String],
       default: [],
