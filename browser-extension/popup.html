@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IndiaNext Threat Lens</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <h1>Threat Lens</h1>
+        <p>Capture, analyze, and score this page now.</p>
+      </header>
+
+      <label class="field-label" for="backendUrl">Backend URL</label>
+      <input id="backendUrl" class="input" type="url" value="http://localhost:8000" />
+
+      <button id="analyzeBtn" class="btn-primary">Capture and Analyze</button>
+
+      <p id="statusText" class="status-text">Ready to analyze.</p>
+
+      <section id="previewCard" class="preview-card hidden" aria-live="polite">
+        <img id="screenshotPreview" alt="Captured screenshot" />
+      </section>
+
+      <section id="resultCard" class="result-card hidden" aria-live="polite">
+        <div class="result-top">
+          <div>
+            <p class="result-label">Risk Score</p>
+            <p id="riskScore" class="risk-score">0%</p>
+          </div>
+          <span id="riskBadge" class="risk-badge">SAFE</span>
+        </div>
+
+        <div class="meter-wrap">
+          <div class="meter-bg">
+            <div id="meterFill" class="meter-fill"></div>
+          </div>
+        </div>
+
+        <div class="result-block">
+          <p class="result-label">Threat Type</p>
+          <p id="threatType" class="result-text">None</p>
+        </div>
+
+        <div class="result-block">
+          <p class="result-label">Why</p>
+          <p id="explanation" class="result-text"></p>
+        </div>
+
+        <div class="result-block">
+          <p class="result-label">Recommendation</p>
+          <p id="recommendation" class="result-text"></p>
+        </div>
+      </section>
+
+      <p id="errorText" class="error-text hidden"></p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
