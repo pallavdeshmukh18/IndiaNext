@@ -9,7 +9,7 @@ const app = express();
 const threatRoutes = require("./routes/threatRoutes");
 const historyRoutes = require("./routes/historyRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
-
+const alertRoutes = require("./routes/alertRoutes");
 app.use(cors());
 app.use(express.json());
 
@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 8000;
 app.use("/api/threats", threatRoutes);
 app.use("/api", historyRoutes);
 app.use("/api", analyticsRoutes);
-
+app.use("/api", alertRoutes);
 // MongoDB connection
 mongoose
     .connect(process.env.MONGO_URI)
