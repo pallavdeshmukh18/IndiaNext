@@ -10,7 +10,9 @@ const analyzeThreat = async (req, res) => {
             return res.status(400).json({ error: "Input is required for analysis." });
         }
 
-        const analysisOutput = await detectThreat(input);
+        const analysisOutput = await detectThreat(input, {
+            pageUrl: req.body.pageUrl
+        });
         
         // Add recommendation based on ML output
         const recommendation = getRecommendation(analysisOutput.threatType, analysisOutput.riskScore);
@@ -54,7 +56,9 @@ const quickAnalyzeThreat = async (req, res) => {
         }
 
         const normalizedInput = input.slice(0, 10000);
-        const analysisOutput = await detectThreat(normalizedInput);
+        const analysisOutput = await detectThreat(normalizedInput, {
+            pageUrl: pageUrl || null
+        });
         const recommendation = getRecommendation(analysisOutput.threatType, analysisOutput.riskScore);
 
         res.json({

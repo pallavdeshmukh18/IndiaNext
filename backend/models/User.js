@@ -17,14 +17,30 @@ const userSchema = new mongoose.Schema(
         },
         password: {
             type: String,
-            required: true
+            required: function passwordRequired() {
+                return this.authProvider === "local";
+            }
+        },
+        googleId: {
+            type: String,
+            unique: true,
+            sparse: true
+        },
+        authProvider: {
+            type: String,
+            enum: ["local", "google"],
+            default: "local"
+        },
+        avatar: {
+            type: String,
+            default: ""
         }
     },
     { timestamps: true }
 );
 
 userSchema.pre("save", async function hashPassword(next) {
-    if (!this.isModified("password")) {
+    if (!this.password || !this.isModified("password")) {
         return next();
     }
 
@@ -38,6 +54,10 @@ userSchema.pre("save", async function hashPassword(next) {
 });
 
 userSchema.methods.matchPassword = function matchPassword(enteredPassword) {
+    if (!this.password) {
+        return false;
+    }
+
     return bcrypt.compare(enteredPassword, this.password);
 };
 
