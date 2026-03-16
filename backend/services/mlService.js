@@ -1,3 +1,8 @@
+const { execFile } = require('child_process');
+const path = require('path');
+const util = require('util');
+const execFileAsync = util.promisify(execFile);
+
 const detectThreat = async (input) => {
     // In a real application, this would call an external ML API or a local model.
     // Here we're using a heuristic/mock approach for the hackathon prototype.
@@ -14,7 +19,7 @@ const detectThreat = async (input) => {
     let explanations = [];
     let threatType = "Safe";
     
-    // Check for Phishing
+    // Check for Phishing text
     let phishingHits = 0;
     for (const keyword of phishingKeywords) {
         if (lowerInput.includes(keyword)) {
@@ -28,12 +33,33 @@ const detectThreat = async (input) => {
         threatType = "Phishing";
     }
 
-    // Check for URLs
+    // Check for URLs and pass them to the SentinEL script
     const urlsFound = input.match(urlPattern);
-    if (urlsFound) {
-        riskScore += 20;
-        explanations.push(`Contains ${urlsFound.length} URL(s) which could be malicious.`);
-        if (threatType === "Safe") threatType = "Suspicious URL";
+    if (urlsFound && urlsFound.length > 0) {
+        const urlToInspect = urlsFound[0]; // Evaluate the first URL found
+        try {
+            console.log(`Delegating prediction for URL: ${urlToInspect} to local SentinEL model...`);
+            const scriptPath = path.join(__dirname, '..', '..', 'ML', 'phishing_url', 'predict.py');
+            let { stdout } = await execFileAsync('python', [scriptPath, urlToInspect]);
+            
+            const mlResult = JSON.parse(stdout.trim());
+            
+            if (mlResult.error) {
+                throw new Error(mlResult.error);
+            }
+
+            riskScore = Math.max(riskScore, mlResult.riskScore); // take the highest risk
+            explanations.push(`SentinEL Assessment: ${mlResult.explanation}`);
+            if (mlResult.isSuspicious) {
+                threatType = mlResult.threatType;
+            }
+        } catch (err) {
+            console.error("SentinEL Flask API failed:", err.message);
+            // Fallback logic
+            riskScore += 20;
+            explanations.push(`Contains URL which could be malicious (AI evaluation offline).`);
+            if (threatType === "Safe") threatType = "Suspicious URL";
+        }
     }
 
     // Check for Prompt Injection
