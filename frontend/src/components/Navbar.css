@@ -3,11 +3,15 @@
     top: 0;
     left: 0;
     width: 100%;
-    padding: 1.5rem 2.5rem;
+    padding: 1.25rem 2.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 100;
+    background: linear-gradient(180deg, rgba(18, 18, 20, 0.8) 0%, rgba(18, 18, 20, 0.4) 100%);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .navbar-logo {
@@ -31,6 +35,7 @@
     font-size: 0.85rem;
     color: var(--text-muted);
     font-weight: 500;
+    border-radius: 999px;
 }
 
 .navbar-links a {
@@ -43,36 +48,35 @@
 
 .btn-primary {
     background-color: var(--text-main);
-    color: var(--text-dark);
+    color: var(--bg-color);
     padding: 0.6rem 1.25rem;
-    border-radius: 999px;
+    border-radius: 8px;
     font-size: 0.85rem;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .btn-primary:hover {
     transform: translateY(-1px);
-    background-color: #ffffff;
-    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+    opacity: 0.9;
 }
 
 .btn-secondary {
-    background-color: transparent;
+    background-color: rgba(255, 255, 255, 0.04);
     color: var(--text-main);
     padding: 0.6rem 1.25rem;
-    border-radius: 999px;
+    border-radius: 8px;
     font-size: 0.85rem;
     font-weight: 600;
     transition: background-color 0.2s ease, border-color 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     cursor: pointer;
 }
 
 .btn-secondary:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.4);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.24);
 }

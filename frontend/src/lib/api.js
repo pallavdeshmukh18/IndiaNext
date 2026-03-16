@@ -58,12 +58,12 @@ export const authApi = {
 };
 
 export const threatApi = {
-  analyze({ token, input, inputType }) {
+  analyze({ token, payload, inputType }) {
     return request('/threats/analyze', {
       method: 'POST',
       token,
       body: {
-        input,
+        ...payload,
         inputType
       }
     });

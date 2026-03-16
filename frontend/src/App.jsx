@@ -9,6 +9,7 @@ import Dashboard from './pages/dashboard';
 import Analysis from './pages/analysis';
 import HistoryPage from './pages/history';
 import AlertsPage from './pages/alerts';
+import Inbox from './pages/inbox';
 import LoadingScreen from './components/LoadingScreen';
 import { authApi } from './lib/api';
 import { clearSession, loadSession, saveSession } from './lib/session';
@@ -104,6 +105,7 @@ function App() {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard session={session} />} />
               <Route path="analyze" element={<Analysis session={session} />} />
+              <Route path="inbox" element={<Inbox session={session} />} />
               <Route path="history" element={<HistoryPage session={session} />} />
               <Route path="alerts" element={<AlertsPage session={session} />} />
             </Route>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
-import authIllustration from '../assets/auth-illustration.png';
+import AuthCarousel from '../components/AuthCarousel';
 import './AuthPages.css';
 
 const Login = ({ onLogin, onGoogleAuth }) => {
@@ -51,14 +51,7 @@ const Login = ({ onLogin, onGoogleAuth }) => {
 
   return (
     <div className="auth-page-wrapper">
-      <aside className="auth-left-panel">
-        <div className="auth-left-grid"></div>
-        <img src={authIllustration} alt="Cybersecurity interface" className="auth-illustration" />
-        <div className="auth-hero-text">
-          <h1>Stop threats before they spread</h1>
-          <p>Sign in to continue monitoring suspicious activity in real time.</p>
-        </div>
-      </aside>
+      <AuthCarousel />
 
       <section className="auth-right-panel">
         <div className="auth-card">
