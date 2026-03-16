@@ -1,4 +1,5 @@
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').replace(/\/$/, '');
+const BACKEND_BASE_URL = (import.meta.env.VITE_BACKEND_BASE_URL || BASE_URL.replace(/\/api$/, '')).replace(/\/$/, '');
 
 async function request(path, { method = 'GET', token, body, signal } = {}) {
   const headers = {
@@ -53,6 +54,31 @@ export const authApi = {
     return request('/auth/google', {
       method: 'POST',
       body: { idToken }
+    });
+  },
+
+  getGoogleOAuthUrl(redirectPath = '/auth/google/callback') {
+    const redirectUrl = new URL(redirectPath, window.location.origin);
+    return `${BACKEND_BASE_URL}/auth/google?redirect=${encodeURIComponent(redirectUrl.toString())}`;
+  }
+};
+
+export const inboxApi = {
+  getInboxScan(userId) {
+    const url = new URL(`${BACKEND_BASE_URL}/scan`);
+    if (userId) {
+      url.searchParams.set('userId', userId);
+    }
+
+    return fetch(url.toString()).then(async (response) => {
+      const raw = await response.text();
+      const data = raw ? JSON.parse(raw) : null;
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Unable to load inbox');
+      }
+
+      return data;
     });
   }
 };
@@ -131,4 +157,4 @@ export const analyticsApi = {
   }
 };
 
-export { BASE_URL as API_BASE_URL };
+export { BASE_URL as API_BASE_URL, BACKEND_BASE_URL };

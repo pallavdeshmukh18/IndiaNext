@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
 import AuthCarousel from '../components/AuthCarousel';
+import { authApi } from '../lib/api';
 import './AuthPages.css';
 
 const Signup = ({ onSignup, onGoogleAuth }) => {
@@ -41,19 +41,8 @@ const Signup = ({ onSignup, onGoogleAuth }) => {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      if (onGoogleAuth) {
-        await onGoogleAuth({ credential: credentialResponse.credential });
-      }
-      navigate('/app/dashboard', { replace: true });
-    } catch (authError) {
-      setError(authError instanceof Error ? authError.message : 'Unable to complete Google sign-in.');
-    }
-  };
-
-  const handleGoogleError = () => {
-    setError('Google sign-in was cancelled or failed. Please try again.');
+  const handleGoogleOAuth = () => {
+    window.location.href = authApi.getGoogleOAuthUrl();
   };
 
   return (
@@ -135,14 +124,14 @@ const Signup = ({ onSignup, onGoogleAuth }) => {
             </div>
 
             <div className="auth-google-btn-wrapper">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                width="100%"
-                theme="filled_black"
-                shape="rectangular"
-                text="continue_with"
-              />
+              <button
+                type="button"
+                className="auth-google-btn"
+                onClick={handleGoogleOAuth}
+                disabled={isSubmitting}
+              >
+                Continue with Google
+              </button>
             </div>
           </form>
 

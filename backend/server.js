@@ -73,7 +73,9 @@ app.use("/api", analyticsRoutes);
 app.use("/api", alertRoutes);
 
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 10000,
+  })
   .then(() => {
     console.log("MongoDB connected");
     app.listen(PORT, () => {
@@ -82,5 +84,8 @@ mongoose
   })
   .catch((error) => {
     console.error("Failed to connect to MongoDB:", error.message);
+    if (error.message.includes("querySrv")) {
+      console.error("MongoDB Atlas SRV lookup failed. Use a non-SRV mongodb:// replica set URI in backend/.env.");
+    }
     process.exit(1);
   });

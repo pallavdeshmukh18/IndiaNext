@@ -42,6 +42,15 @@ const emailScanSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    riskScore: {
+      type: Number,
+      required: true,
+    },
+    riskLevel: {
+      type: String,
+      enum: ["LOW", "MEDIUM", "HIGH"],
+      required: true,
+    },
     label: {
       type: String,
       required: true,
@@ -53,6 +62,14 @@ const emailScanSchema = new mongoose.Schema(
     aiGeneratedAnalysis: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
+    },
+    modelSource: {
+      type: String,
+      default: "ML/phishing_mail/phishing_model.pkl",
+    },
+    scoreBasis: {
+      type: String,
+      default: "",
     },
   },
   {

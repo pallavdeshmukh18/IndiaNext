@@ -124,6 +124,12 @@
   font-family: var(--font-mono);
 }
 
+.inbox-actions-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 
 /* Right Pane Container */
 .inbox-detail-container {
@@ -238,6 +244,43 @@
   padding-top: 1.5rem;
   margin-top: 1.5rem;
   border-top: 1px solid var(--workspace-card-border-soft);
+}
+
+.inbox-empty-state {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.inbox-empty-state p {
+  max-width: 28rem;
+  line-height: 1.6;
+}
+
+.inbox-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--workspace-card-border-soft);
+}
+
+.inbox-meta-grid div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.inbox-score-basis {
+  margin-top: 0.35rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.76rem;
+  line-height: 1.45;
 }
 
 /* Responsive adjustments */

@@ -10,6 +10,7 @@ import Analysis from './pages/analysis';
 import HistoryPage from './pages/history';
 import AlertsPage from './pages/alerts';
 import Inbox from './pages/inbox';
+import GoogleCallback from './pages/googleCallback';
 import LoadingScreen from './components/LoadingScreen';
 import { authApi } from './lib/api';
 import { clearSession, loadSession, saveSession } from './lib/session';
@@ -20,7 +21,8 @@ function buildSession(authPayload) {
     userId: authPayload.userId,
     name: authPayload.name || authPayload.email?.split('@')[0] || 'Analyst',
     email: authPayload.email,
-    token: authPayload.token
+    token: authPayload.token || `gmail:${authPayload.userId || authPayload.email || 'connected'}`,
+    gmailConnected: Boolean(authPayload.gmailConnected ?? authPayload.email)
   };
 }
 
@@ -49,6 +51,16 @@ function App() {
     setSession(null);
   }, []);
 
+  const handleGoogleOAuthCallback = React.useCallback((authPayload) => {
+    const nextSession = buildSession({
+      ...authPayload,
+      gmailConnected: true
+    });
+    saveSession(nextSession);
+    setSession(nextSession);
+    return nextSession;
+  }, []);
+
   const handleGoogleAuth = React.useCallback(async ({ credential }) => {
     const response = await authApi.googleAuth(credential);
     const nextSession = buildSession(response);
@@ -73,7 +85,7 @@ function App() {
               <Route
                 path="/login"
                 element={
-                  session?.token ? (
+                  (session?.token || session?.gmailConnected) ? (
                     <Navigate to="/app/dashboard" replace />
                   ) : (
                     <Login onLogin={handleLogin} onGoogleAuth={handleGoogleAuth} />
@@ -83,19 +95,23 @@ function App() {
               <Route
                 path="/signup"
                 element={
-                  session?.token ? (
+                  (session?.token || session?.gmailConnected) ? (
                     <Navigate to="/app/dashboard" replace />
                   ) : (
                     <Signup onSignup={handleSignup} onGoogleAuth={handleGoogleAuth} />
                   )
                 }
               />
+              <Route
+                path="/auth/google/callback"
+                element={<GoogleCallback onComplete={handleGoogleOAuthCallback} />}
+              />
             </Route>
 
             <Route
               path="/app"
               element={
-                session?.token ? (
+                (session?.token || session?.gmailConnected) ? (
                   <AppShell session={session} onLogout={handleLogout} />
                 ) : (
                   <Navigate to="/login" replace />
@@ -112,7 +128,7 @@ function App() {
 
             <Route
               path="*"
-              element={<Navigate to={session?.token ? '/app/dashboard' : '/'} replace />}
+              element={<Navigate to={(session?.token || session?.gmailConnected) ? '/app/dashboard' : '/'} replace />}
             />
           </Routes>
         </BrowserRouter>
