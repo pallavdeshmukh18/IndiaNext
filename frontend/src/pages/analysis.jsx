@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Bot,
   CheckCircle2,
+  Image,
   ImagePlus,
   Link2,
   Mail,
@@ -24,7 +25,7 @@ const channels = [
   { key: 'promptInput', label: 'Prompt', icon: Bot },
   { key: 'logText', label: 'Server Logs', icon: Terminal },
   { key: 'generatedText', label: 'Generated Text', icon: FileText },
-  { key: 'imageUrl', label: 'Image URL', icon: ImagePlus },
+  { key: 'imageUrl', label: 'Image', icon: Image },
   { key: 'audioUrl', label: 'Audio URL', icon: Volume2 }
 ];
 
@@ -83,6 +84,8 @@ function buildLocalScan(result, input, inputType) {
 const Analysis = ({ session }) => {
   const [inputType, setInputType] = React.useState('messageText');
   const [input, setInput] = React.useState(sampleInputs.messageText[0]);
+  const [imageInputMode, setImageInputMode] = React.useState('url');
+  const [imageFile, setImageFile] = React.useState(null);
   const [error, setError] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [result, setResult] = React.useState(null);
@@ -90,32 +93,88 @@ const Analysis = ({ session }) => {
 
   React.useEffect(() => {
     setInput(sampleInputs[inputType][0]);
+    setImageFile(null);
+    setImageInputMode('url');
     setError('');
   }, [inputType]);
+
+  const imageFileName = imageFile?.name || '';
+
+  const normalizeSuiteResult = React.useCallback((response, originalInput, originalInputType) => {
+    const riskScore = Number(response.overallRiskScore ?? 0);
+    const recommendation = response.isSuspicious
+      ? 'Review the media manually and preserve the original file before taking action.'
+      : 'No strong deepfake indicators detected. Keep monitoring if the source remains untrusted.';
+
+    return {
+      threatType: response.primaryThreatType || 'None',
+      confidence: Math.round(riskScore),
+      riskScore,
+      riskLevel: response.riskLevel || (riskScore > 75 ? 'HIGH' : riskScore > 40 ? 'MEDIUM' : 'LOW'),
+      explanation: response.summary || 'No explanation was returned by the classifier.',
+      recommendation,
+      indicators: Array.isArray(response.indicators) ? response.indicators : [],
+      input: originalInput,
+      inputType: originalInputType,
+      analyzedAt: response.checkedAt || new Date().toISOString(),
+      logId: response.logId || null
+    };
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
 
-    if (!input.trim()) {
+    if (inputType === 'imageUrl' && imageInputMode === 'file' && !imageFile) {
+      setError('Upload an image before starting analysis.');
+      return;
+    }
+
+    if ((inputType !== 'imageUrl' || imageInputMode === 'url') && !input.trim()) {
       setError('Paste suspicious content before starting analysis.');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const payload = { [inputType]: input };
-      const response = await threatApi.analyze({
-        token: session?.token,
-        payload,
-        inputType // Send inputType separately to track the channel used
-      });
+      if (inputType === 'imageUrl') {
+        const formData = new FormData();
+        if (imageInputMode === 'file' && imageFile) {
+          formData.append('image', imageFile);
+        } else {
+          formData.append('imageUrl', input);
+        }
+        formData.append('saveToLog', 'false');
 
-      setResult(normalizeAnalysisResult(response, input, inputType));
+        const response = await threatApi.suiteAnalyze({
+          token: session?.token,
+          formData
+        });
+
+        setResult(
+          normalizeSuiteResult(
+            response,
+            imageInputMode === 'file' ? imageFileName || 'Uploaded image' : input,
+            inputType
+          )
+        );
+      } else {
+        const payload = { [inputType]: input };
+        const response = await threatApi.analyze({
+          token: session?.token,
+          payload,
+          inputType
+        });
+
+        setResult(normalizeAnalysisResult(response, input, inputType));
+      }
       setResultSource('live');
     } catch {
-      const fallback = normalizeAnalysisResult(createMockAnalysis({ input, inputType }), input, inputType);
-      appendLocalScan(buildLocalScan(fallback, input, inputType));
+      const fallbackInput = inputType === 'imageUrl' && imageInputMode === 'file'
+        ? imageFileName || 'Uploaded image'
+        : input;
+      const fallback = normalizeAnalysisResult(createMockAnalysis({ input: fallbackInput, inputType }), fallbackInput, inputType);
+      appendLocalScan(buildLocalScan(fallback, fallbackInput, inputType));
       setResult(fallback);
       setResultSource('mock');
     } finally {
@@ -169,37 +228,106 @@ const Analysis = ({ session }) => {
           <form className="analysis-form" onSubmit={handleSubmit}>
             <div>
               <label className="analysis-label" htmlFor="analysis-input">
-                Suspicious {inputType === 'url' ? 'URL' : 'content'}
+                {inputType === 'imageUrl' ? 'Image source' : `Suspicious ${inputType === 'url' ? 'URL' : 'content'}`}
               </label>
-              <textarea
-                id="analysis-input"
-                className="analysis-textarea"
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                placeholder="Paste suspicious content here"
-              />
+              {inputType === 'imageUrl' ? (
+                <div className="analysis-media-stack">
+                  <div className="analysis-chip-row">
+                    <button
+                      type="button"
+                      className={`analysis-channel-button${imageInputMode === 'url' ? ' active' : ''}`}
+                      onClick={() => setImageInputMode('url')}
+                    >
+                      <Link2 size={16} />
+                      Paste URL
+                    </button>
+                    <button
+                      type="button"
+                      className={`analysis-channel-button${imageInputMode === 'file' ? ' active' : ''}`}
+                      onClick={() => setImageInputMode('file')}
+                    >
+                      <ImagePlus size={16} />
+                      Upload image
+                    </button>
+                  </div>
+
+                  {imageInputMode === 'url' ? (
+                    <textarea
+                      id="analysis-input"
+                      className="analysis-textarea"
+                      value={input}
+                      onChange={(event) => setInput(event.target.value)}
+                      placeholder="Paste a public image URL here"
+                    />
+                  ) : (
+                    <label className="analysis-upload-box" htmlFor="analysis-image-upload">
+                      <input
+                        id="analysis-image-upload"
+                        type="file"
+                        accept="image/*"
+                        className="analysis-file-input"
+                        onChange={(event) => setImageFile(event.target.files?.[0] || null)}
+                      />
+                      <ImagePlus size={18} />
+                      <strong>{imageFileName || 'Choose an image to upload'}</strong>
+                      <span>PNG, JPG, WEBP and other browser-supported image formats are accepted.</span>
+                    </label>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  id="analysis-input"
+                  className="analysis-textarea"
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  placeholder="Paste suspicious content here"
+                />
+              )}
               <p className="analysis-helper">
-                {inputType === 'screenshot'
-                  ? 'Use OCR output here until image upload is connected.'
+                {inputType === 'imageUrl'
+                  ? imageInputMode === 'file'
+                    ? 'Upload an image to run deepfake analysis through the backend media pipeline.'
+                    : 'Paste a public image URL to run deepfake analysis without uploading a file.'
                   : 'Longer submissions are supported, but concise payloads make the decision trace easier to review.'}
               </p>
             </div>
 
-            <div>
-              <label className="analysis-label">Quick samples</label>
-              <div className="analysis-chip-row">
-                {sampleInputs[inputType].map((sample) => (
-                  <button
-                    key={sample}
-                    type="button"
-                    className="analysis-chip"
-                    onClick={() => setInput(sample)}
-                  >
-                    {sample.slice(0, 48)}...
-                  </button>
-                ))}
+            {inputType !== 'imageUrl' ? (
+              <div>
+                <label className="analysis-label">Quick samples</label>
+                <div className="analysis-chip-row">
+                  {sampleInputs[inputType].map((sample) => (
+                    <button
+                      key={sample}
+                      type="button"
+                      className="analysis-chip"
+                      onClick={() => setInput(sample)}
+                    >
+                      {sample.slice(0, 48)}...
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <label className="analysis-label">Quick samples</label>
+                <div className="analysis-chip-row">
+                  {sampleInputs[inputType].map((sample) => (
+                    <button
+                      key={sample}
+                      type="button"
+                      className="analysis-chip"
+                      onClick={() => {
+                        setImageInputMode('url');
+                        setInput(sample);
+                      }}
+                    >
+                      {sample.slice(0, 48)}...
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             {error ? <div className="empty-state">{error}</div> : null}
 

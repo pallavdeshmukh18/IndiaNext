@@ -27,6 +27,14 @@ function splitSender(sender = '') {
   };
 }
 
+function formatEmailBody(body = '') {
+  return String(body || '')
+    .replace(/\r/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+}
+
 function normalizeEmail(email) {
   const { senderName, senderEmail } = splitSender(email.sender);
   const probability = Number(email.scamProbability || 0);
@@ -38,9 +46,9 @@ function normalizeEmail(email) {
     senderName,
     senderEmail,
     subject: email.subject || '(No Subject)',
-    date: email.createdAt || new Date().toISOString(),
-    preview: email.snippet || email.body?.slice(0, 160) || 'No preview available.',
-    body: email.body || 'No email body available.',
+    date: email.sentAt || email.createdAt || new Date().toISOString(),
+    preview: email.snippet || formatEmailBody(email.body).slice(0, 160) || 'No preview available.',
+    body: formatEmailBody(email.body) || 'No email body available.',
     threatType: String(email.label || 'safe').replace(/^\w/, (character) => character.toUpperCase()),
     riskScore: Math.round(riskScore),
     riskLevel: email.riskLevel || 'LOW',

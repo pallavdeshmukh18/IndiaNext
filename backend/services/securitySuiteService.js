@@ -1169,10 +1169,12 @@ async function analyzeUnifiedThreatInput(input) {
 
   const primary = pickPrimaryThreat(checks);
   const riskScore = primary ? primary.riskScore : 0;
+  const confidence = primary ? Math.round(clamp(Number(primary.confidence || 0), 0, 1) * 100) : 0;
 
   return {
     isSuspicious: riskScore >= 40,
     riskScore,
+    confidence,
     riskLevel: mapRiskLevel(riskScore),
     threatType: primary && riskScore >= 40 ? primary.threatType : "None",
     explanation: primary?.explanation || summarizeSuite(checks),

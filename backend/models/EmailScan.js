@@ -23,6 +23,10 @@ const emailScanSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    sentAt: {
+      type: String,
+      default: "",
+    },
     links: {
       type: [String],
       default: [],
@@ -65,7 +69,7 @@ const emailScanSchema = new mongoose.Schema(
     },
     modelSource: {
       type: String,
-      default: "ML/phishing_mail/phishing_model.pkl",
+      default: process.env.HF_MODEL_EMAIL_PHISHING || "aamoshdahal/email-phishing-distilbert-finetuned",
     },
     scoreBasis: {
       type: String,
