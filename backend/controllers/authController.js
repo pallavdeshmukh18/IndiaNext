@@ -34,6 +34,7 @@ const registerUser = async (req, res) => {
 
         res.status(201).json(buildAuthResponse(user));
     } catch (error) {
+        console.error("registerUser error:", error);
         res.status(500).json({
             error: "Failed to register user"
         });
@@ -60,6 +61,7 @@ const loginUser = async (req, res) => {
 
         res.json(buildAuthResponse(user));
     } catch (error) {
+        console.error("loginUser error:", error);
         res.status(500).json({
             error: "Failed to log in user"
         });
