@@ -39,7 +39,10 @@ def combine_email_text(payload):
     parts = [
         payload.get("subject", ""),
         payload.get("sender", ""),
+        payload.get("senderName", ""),
+        payload.get("senderEmail", ""),
         payload.get("body", ""),
+        payload.get("snippet", ""),
         links,
         attachment_names,
     ]
@@ -133,8 +136,9 @@ def main():
         },
         "model_source": "ML/phishing_mail/phishing_model.pkl",
         "score_basis": (
-            "Risk score is the phishing probability from the trained local phishing model "
-            "(phishing_model.pkl + TF-IDF vectorizer), normalized to a 0-100 scale."
+            "Risk score is the phishing probability from the trained email phishing model "
+            "(phishing_model.pkl + TF-IDF vectorizer), using subject, sender, sender email, body, "
+            "snippet, links, and attachment names, normalized to a 0-100 scale."
         ),
     }
 

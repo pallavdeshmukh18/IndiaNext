@@ -1,5 +1,29 @@
 const URL_REGEX = /\bhttps?:\/\/[^\s<>"')\]]+/gi;
 const HTML_LINK_REGEX = /href=["']([^"'#]+)["']/gi;
+const SENDER_EMAIL_REGEX = /<([^>]+)>/;
+
+function extractDomain(value = "") {
+  const normalized = String(value || "").trim().toLowerCase();
+  const match = normalized.match(/@([^>\s]+)/);
+  return match?.[1] || normalized;
+}
+
+function extractLinkDomains(links = []) {
+  const domains = new Set();
+
+  for (const link of links) {
+    try {
+      const url = new URL(link);
+      if (url.hostname) {
+        domains.add(url.hostname.toLowerCase());
+      }
+    } catch (_) {
+      // Ignore malformed links and keep parsing the rest.
+    }
+  }
+
+  return Array.from(domains);
+}
 
 function decodeBase64Url(content = "") {
   if (!content) {
@@ -73,18 +97,30 @@ function parseEmailMessage(email) {
   const parts = collectParts(payload);
   const htmlBody = parts.html.join("\n");
   const plainTextBody = parts.plainText.join("\n");
+  const sender = extractHeader(payload.headers, "From") || "Unknown sender";
+  const senderEmailMatch = sender.match(SENDER_EMAIL_REGEX);
+  const senderEmail = senderEmailMatch?.[1]?.trim() || sender;
+  const senderName = sender.replace(SENDER_EMAIL_REGEX, "").replace(/"/g, "").trim() || senderEmail;
+  const sentAt = extractHeader(payload.headers, "Date") || email.internalDate || "";
   const body =
     plainTextBody.trim() ||
     stripHtml(htmlBody) ||
     stripHtml(decodeBase64Url(payload.body?.data || "")) ||
     email.snippet ||
     "";
+  const links = extractLinks(body, htmlBody);
+  const linkDomains = extractLinkDomains(links);
 
   return {
     subject: extractHeader(payload.headers, "Subject") || "(No Subject)",
-    sender: extractHeader(payload.headers, "From") || "Unknown sender",
+    sender,
+    senderName,
+    senderEmail,
+    senderDomain: extractDomain(senderEmail),
+    sentAt,
     body,
-    links: extractLinks(body, htmlBody),
+    links,
+    linkDomains,
     attachments: parts.attachments,
     snippet: email.snippet || "",
   };
