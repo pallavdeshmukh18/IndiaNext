@@ -45,6 +45,34 @@ const analyzeThreat = async (req, res) => {
     }
 };
 
+const quickAnalyzeThreat = async (req, res) => {
+    try {
+        const { input, pageUrl, title } = req.body;
+
+        if (!input || typeof input !== "string") {
+            return res.status(400).json({ error: "Input text is required for quick analysis." });
+        }
+
+        const normalizedInput = input.slice(0, 10000);
+        const analysisOutput = await detectThreat(normalizedInput);
+        const recommendation = getRecommendation(analysisOutput.threatType, analysisOutput.riskScore);
+
+        res.json({
+            ...analysisOutput,
+            recommendation,
+            analyzedAt: new Date().toISOString(),
+            source: {
+                pageUrl: pageUrl || null,
+                title: title || null
+            }
+        });
+    } catch (error) {
+        console.error("Error in quick threat analysis:", error);
+        res.status(500).json({ error: "Internal server error during quick analysis." });
+    }
+};
+
 module.exports = {
-    analyzeThreat
+    analyzeThreat,
+    quickAnalyzeThreat
 };
