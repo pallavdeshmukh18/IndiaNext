@@ -1,4 +1,5 @@
 const axios = require("axios");
+const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 
@@ -9,6 +10,8 @@ const HF_INFERENCE_MODE = String(process.env.HF_INFERENCE_MODE || "local").toLow
 const PYTHON_BIN = process.env.PYTHON_BIN || "python";
 const LOCAL_INFER_SCRIPT = path.join(__dirname, "..", "..", "ML", "hf_local", "infer.py");
 const LOCAL_MODELS_DIR = path.join(__dirname, "..", "..", "ML", "hf_local", "models");
+const LOCAL_CACHE_DIR = path.join(__dirname, "..", "..", "ML", "hf_local", "hf_cache");
+const LOCAL_LOCK_FILE = path.join(__dirname, "..", "..", "ML", "hf_local", "models.lock.json");
 
 const MODEL_REGISTRY = {
   phishingMessaging:
@@ -86,18 +89,57 @@ function getLocalModelPath(modelId) {
   return localPath;
 }
 
+function getCachedSnapshotPath(modelId) {
+  if (!modelId || typeof modelId !== "string") return null;
+
+  try {
+    if (!fs.existsSync(LOCAL_LOCK_FILE)) {
+      return null;
+    }
+
+    const lock = JSON.parse(fs.readFileSync(LOCAL_LOCK_FILE, "utf-8"));
+    const entry = Array.isArray(lock.models)
+      ? lock.models.find((item) => item.repo_id === modelId)
+      : null;
+
+    if (!entry?.revision) {
+      return null;
+    }
+
+    const snapshotPath = path.join(
+      LOCAL_CACHE_DIR,
+      `models--${modelId.replace(/\//g, "--")}`,
+      "snapshots",
+      entry.revision
+    );
+
+    if (fs.existsSync(snapshotPath)) {
+      return snapshotPath;
+    }
+  } catch (_) {
+    return null;
+  }
+
+  return null;
+}
+
 function resolveModelId(modelId) {
   if (!shouldUseLocalInference()) return modelId;
 
   const localPath = getLocalModelPath(modelId);
   if (localPath && localPath !== modelId) {
     try {
-      if (require("fs").existsSync(localPath)) {
+      if (fs.existsSync(localPath)) {
         return localPath;
       }
     } catch (_) {
       return modelId;
     }
+  }
+
+  const cachedSnapshotPath = getCachedSnapshotPath(modelId);
+  if (cachedSnapshotPath) {
+    return cachedSnapshotPath;
   }
 
   return modelId;

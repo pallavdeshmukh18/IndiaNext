@@ -2,6 +2,8 @@ const SERVICES = {
   "1": {
     key: "email_phishing",
     label: "Email Phishing",
+    shortLabel: "Email Phishing",
+    listDescription: "Analyze suspicious emails and phishing attempts.",
     endpoint: "/ml/email-phishing",
     prompts: {
       text: "Please paste the email content you want Krypton to analyze.",
@@ -12,6 +14,8 @@ const SERVICES = {
   "2": {
     key: "url_phishing",
     label: "URL Phishing",
+    shortLabel: "URL Phishing",
+    listDescription: "Check if a website or link is malicious.",
     endpoint: "/ml/url-phishing",
     prompts: {
       text: "Please paste the URL you want Krypton to scan.",
@@ -22,6 +26,8 @@ const SERVICES = {
   "3": {
     key: "ai_content",
     label: "AI Generated Content",
+    shortLabel: "AI Content",
+    listDescription: "Detect whether text appears AI generated.",
     endpoint: "/ml/ai-content",
     prompts: {
       text: "Please paste the content you want checked for AI generation.",
@@ -32,6 +38,8 @@ const SERVICES = {
   "4": {
     key: "anomaly",
     label: "Anomaly Detection",
+    shortLabel: "Anomaly Detection",
+    listDescription: "Review logs or behavior for unusual patterns.",
     endpoint: "/ml/anomaly",
     prompts: {
       text: "Please paste the logs, activity details, or transaction data you want analyzed.",
@@ -42,6 +50,8 @@ const SERVICES = {
   "5": {
     key: "deepfake_voice",
     label: "Deepfake Voice",
+    shortLabel: "Deepfake Voice",
+    listDescription: "Inspect an audio sample for voice spoofing.",
     endpoint: "/ml/deepfake-voice",
     prompts: {
       text: "Please paste any transcript or context for the voice sample you want reviewed.",
@@ -52,6 +62,8 @@ const SERVICES = {
   "6": {
     key: "deepfake_image",
     label: "Deepfake Image",
+    shortLabel: "Deepfake Image",
+    listDescription: "Check whether an image has been manipulated.",
     endpoint: "/ml/deepfake-image",
     prompts: {
       text: "Please paste any context or claim related to the image you want checked.",
@@ -62,6 +74,8 @@ const SERVICES = {
   "7": {
     key: "prompt_injection",
     label: "Prompt Injection Attack",
+    shortLabel: "Prompt Injection",
+    listDescription: "Detect prompt injection or model manipulation.",
     endpoint: "/ml/prompt-injection",
     prompts: {
       text: "Please paste the prompt or model interaction you want analyzed.",
@@ -72,14 +86,76 @@ const SERVICES = {
 };
 
 const INPUT_TYPES = {
-  "1": { key: "text", label: "Text input" },
-  "2": { key: "image", label: "Screenshot / image" },
-  "3": { key: "file", label: "File upload" },
+  "1": {
+    key: "text",
+    label: "Text input",
+    shortLabel: "Text Input",
+    aliases: ["text_input", "paste_text"],
+  },
+  "2": {
+    key: "image",
+    label: "Screenshot / image",
+    shortLabel: "Image Upload",
+    aliases: ["screenshot", "upload_screenshot", "image_upload"],
+  },
+  "3": {
+    key: "file",
+    label: "File upload",
+    shortLabel: "File Upload",
+    aliases: ["file_upload", "upload_file", "audio_upload"],
+  },
 };
 
-const getServiceBySelection = (selection) => SERVICES[String(selection).trim()] || null;
+const normalizeSelection = (selection) =>
+  String(selection || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
 
-const getInputTypeBySelection = (selection) => INPUT_TYPES[String(selection).trim()] || null;
+const getServiceBySelection = (selection) => {
+  const normalizedSelection = normalizeSelection(selection);
+
+  if (SERVICES[String(selection).trim()]) {
+    return SERVICES[String(selection).trim()];
+  }
+
+  return (
+    Object.values(SERVICES).find((service) => {
+      const normalizedLabel = normalizeSelection(service.label);
+      const normalizedShortLabel = normalizeSelection(service.shortLabel);
+
+      return (
+        normalizedSelection === service.key ||
+        normalizedSelection === `service:${service.key}` ||
+        normalizedSelection === normalizedLabel ||
+        normalizedSelection === normalizedShortLabel
+      );
+    }) || null
+  );
+};
+
+const getInputTypeBySelection = (selection) => {
+  const normalizedSelection = normalizeSelection(selection);
+
+  if (INPUT_TYPES[String(selection).trim()]) {
+    return INPUT_TYPES[String(selection).trim()];
+  }
+
+  return (
+    Object.values(INPUT_TYPES).find((inputType) => {
+      const normalizedLabel = normalizeSelection(inputType.label);
+      const normalizedShortLabel = normalizeSelection(inputType.shortLabel);
+
+      return (
+        normalizedSelection === inputType.key ||
+        normalizedSelection === `input:${inputType.key}` ||
+        inputType.aliases.includes(normalizedSelection) ||
+        normalizedSelection === normalizedLabel ||
+        normalizedSelection === normalizedShortLabel
+      );
+    }) || null
+  );
+};
 
 const getServiceByKey = (serviceKey) =>
   Object.values(SERVICES).find((service) => service.key === serviceKey) || null;
@@ -97,7 +173,7 @@ const getServiceMenuText = () => [
   "6 Deepfake Image",
   "7 Prompt Injection Attack",
   "",
-  "Reply with the number.",
+  "Tap an option below or reply with the option name.",
 ].join("\n");
 
 const getInputMenuText = (serviceLabel) => [
@@ -109,13 +185,28 @@ const getInputMenuText = (serviceLabel) => [
   "2 Screenshot / image",
   "3 File upload",
   "",
-  "Reply with the number.",
+  "Reply with the option name or use the buttons.",
 ].join("\n");
+
+const getServiceListItems = () =>
+  Object.values(SERVICES).map((service) => ({
+    id: `service:${service.key}`,
+    item: service.shortLabel,
+    description: service.listDescription,
+  }));
+
+const getInputQuickReplies = () =>
+  Object.values(INPUT_TYPES).map((inputType) => ({
+    id: `input:${inputType.key}`,
+    title: inputType.shortLabel,
+  }));
 
 module.exports = {
   getInputMenuText,
+  getInputQuickReplies,
   getInputTypeBySelection,
   getServiceByKey,
+  getServiceListItems,
   getServiceBySelection,
   getServiceMenuText,
 };

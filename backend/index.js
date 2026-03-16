@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const os = require("os");
+const twilio = require("twilio");
 
 const app = express();
 const threatRoutes = require("./routes/threatRoutes");
@@ -11,6 +12,8 @@ const historyRoutes = require("./routes/historyRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const alertRoutes = require("./routes/alertRoutes");
 const authRoutes = require("./routes/authRoutes");
+const { sendInteractiveMessage } = require("./bot/twilioInteractive");
+const { handleIncomingWhatsappMessage } = require("./bot/whatsappBot");
 app.use(cors());
 app.use(express.json());
 
@@ -22,20 +25,37 @@ app.use("/api", historyRoutes);
 app.use("/api", analyticsRoutes);
 app.use("/api", alertRoutes);
 
-const twilio = require("twilio");
+app.post("/whatsapp", express.urlencoded({ extended: false }), async (req, res) => {
+    try {
+        const botResponse = await handleIncomingWhatsappMessage(req.body);
+        const sentInteractive = botResponse.interactive
+            ? await sendInteractiveMessage({
+                to: req.body.From,
+                interactive: botResponse.interactive,
+            })
+            : false;
+        const twiml = new twilio.twiml.MessagingResponse();
 
-app.post("/whatsapp", express.urlencoded({ extended: false }), (req, res) => {
+        if (!sentInteractive || botResponse.sendTextAlongsideInteractive) {
+            twiml.message(botResponse.message);
+        }
 
-    console.log("BODY RECEIVED:", req.body);
+        res.type("text/xml");
+        res.send(twiml.toString());
+    } catch (error) {
+        console.error("WhatsApp bot error:", error.message);
 
-    const msg = req.body.Body;
+        const twiml = new twilio.twiml.MessagingResponse();
+        twiml.message(
+            "Krypton could not complete that scan right now. Please try again in a moment or reply with MENU to restart."
+        );
 
-    const twiml = new twilio.twiml.MessagingResponse();
-    twiml.message("🤖 Scam scanner received: " + msg);
-
-    res.type("text/xml");
-    res.send(twiml.toString());
+        res.type("text/xml");
+        res.status(200).send(twiml.toString());
+    }
 });
+
+
 
 // MongoDB connection
 mongoose

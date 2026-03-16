@@ -7,19 +7,25 @@ const {
 const { analyzeWithMl } = require("./mlClient");
 const {
   getInputMenuText,
+  getInputQuickReplies,
   getInputTypeBySelection,
   getServiceByKey,
+  getServiceListItems,
   getServiceBySelection,
   getServiceMenuText,
 } = require("./serviceRouter");
 const { detectMediaKind, downloadMedia, extractTextFromImage } = require("./mediaHandler");
 
 const GLOBAL_MENU_COMMANDS = new Set(["menu", "restart", "reset", "home", "start"]);
+const RESTART_SELECTIONS = new Set(["1", "yes", "scan_again", "next:scan_again", "scan again"]);
+const END_SELECTIONS = new Set(["2", "no", "done", "next:done", "end_session"]);
 
 const isGreeting = (message) => /^(hi|hello|hey|hola|namaste)$/i.test(message.trim());
 
-const buildReply = (message) => ({
+const buildReply = (message, interactive = null, sendTextAlongsideInteractive = false) => ({
   message,
+  interactive,
+  sendTextAlongsideInteractive,
 });
 
 const buildAnalysisReply = (result) => [
@@ -34,8 +40,7 @@ const buildAnalysisReply = (result) => [
   "",
   "Would you like to run another scan?",
   "",
-  "1 Yes",
-  "2 No",
+  "Use the buttons below or reply Yes / No.",
 ].join("\n");
 
 const buildInvalidServiceReply = () => [
@@ -49,6 +54,37 @@ const buildInvalidInputReply = (service) => [
   "",
   getInputMenuText(service.label),
 ].join("\n");
+
+const buildMainMenuInteractive = () => ({
+  template: "main_menu",
+  variables: {},
+  preview: {
+    type: "list-picker",
+    button: "Choose a scan",
+    items: getServiceListItems(),
+  },
+});
+
+const buildInputMenuInteractive = (service) => ({
+  template: "input_menu",
+  variables: {},
+  preview: {
+    type: "quick-reply",
+    actions: getInputQuickReplies(),
+  },
+});
+
+const buildRescanInteractive = () => ({
+  template: "rescan_menu",
+  variables: {},
+  preview: {
+    type: "quick-reply",
+    actions: [
+      { id: "next:scan_again", title: "Scan Again" },
+      { id: "next:done", title: "Done" },
+    ],
+  },
+});
 
 const buildPromptForInput = (service, inputType) => {
   const prompt = service.prompts[inputType.key];
@@ -162,6 +198,16 @@ const processWaitingInput = async (bodyText, reqBody, state) => {
       } else if (mediaKind === "image" && service.key !== "deepfake_image") {
         const extractedText = await extractTextFromImage(buffer, media);
         payload = normalizeTextPayload(service, extractedText, state, media);
+      } else if (
+        service.key === "email_phishing" ||
+        service.key === "url_phishing" ||
+        service.key === "ai_content" ||
+        service.key === "anomaly" ||
+        service.key === "prompt_injection"
+      ) {
+        return buildReply(
+          "This scan works best with pasted text or an image screenshot. Please send text directly or upload a screenshot so Krypton can extract the content."
+        );
       } else {
         payload = normalizeBinaryPayload(service, buffer, state, media);
       }
@@ -171,31 +217,36 @@ const processWaitingInput = async (bodyText, reqBody, state) => {
   const result = await analyzeWithMl(service, payload);
   updateConversation(state.phone, { step: "another_scan" });
 
-  return buildReply(buildAnalysisReply(result));
+  return buildReply(buildAnalysisReply(result), buildRescanInteractive(), true);
 };
 
-const handleContinueStep = (bodyText, phone) => {
-  if (bodyText === "1") {
+const handleContinueStep = (selection, phone) => {
+  const normalizedSelection = String(selection || "").trim().toLowerCase();
+
+  if (RESTART_SELECTIONS.has(normalizedSelection)) {
     updateConversation(phone, {
       step: "choose_service",
       service: null,
       inputType: null,
     });
 
-    return buildReply(getServiceMenuText());
+    return buildReply(getServiceMenuText(), buildMainMenuInteractive());
   }
 
-  if (bodyText === "2") {
+  if (END_SELECTIONS.has(normalizedSelection)) {
     clearConversation(phone);
     return buildReply("Thanks for using Krypton AI Security Bot. Reply with any message whenever you want to start another scan.");
   }
 
-  return buildReply("Reply with 1 for Yes or 2 for No.");
+  return buildReply("Use the buttons below or reply Yes / No.", buildRescanInteractive());
 };
 
 const handleIncomingWhatsappMessage = async (reqBody) => {
   const phone = reqBody.From || "unknown";
   const bodyText = String(reqBody.Body || "").trim();
+  const buttonText = String(reqBody.ButtonText || "").trim();
+  const buttonPayload = String(reqBody.ButtonPayload || "").trim();
+  const selection = buttonPayload || buttonText || bodyText;
   const state = getConversation(phone);
 
   if (!bodyText && Number(reqBody.NumMedia || 0) === 0) {
@@ -209,14 +260,14 @@ const handleIncomingWhatsappMessage = async (reqBody) => {
       inputType: null,
     });
 
-    return buildReply(getServiceMenuText());
+    return buildReply(getServiceMenuText(), buildMainMenuInteractive());
   }
 
   if (state.step === "choose_service") {
-    const service = getServiceBySelection(bodyText);
+    const service = getServiceBySelection(selection);
 
     if (!service) {
-      return buildReply(buildInvalidServiceReply());
+      return buildReply(buildInvalidServiceReply(), buildMainMenuInteractive());
     }
 
     updateConversation(phone, {
@@ -225,20 +276,20 @@ const handleIncomingWhatsappMessage = async (reqBody) => {
       inputType: null,
     });
 
-    return buildReply(getInputMenuText(service.label));
+    return buildReply(getInputMenuText(service.label), buildInputMenuInteractive(service));
   }
 
   if (state.step === "choose_input") {
     const service = getServiceByKey(state.service);
-    const inputType = getInputTypeBySelection(bodyText);
+    const inputType = getInputTypeBySelection(selection);
 
     if (!service) {
       resetConversation(phone);
-      return buildReply(getServiceMenuText());
+      return buildReply(getServiceMenuText(), buildMainMenuInteractive());
     }
 
     if (!inputType) {
-      return buildReply(buildInvalidInputReply(service));
+      return buildReply(buildInvalidInputReply(service), buildInputMenuInteractive(service));
     }
 
     updateConversation(phone, {
@@ -254,11 +305,11 @@ const handleIncomingWhatsappMessage = async (reqBody) => {
   }
 
   if (state.step === "another_scan") {
-    return handleContinueStep(bodyText, phone);
+    return handleContinueStep(selection, phone);
   }
 
   resetConversation(phone);
-  return buildReply(getServiceMenuText());
+  return buildReply(getServiceMenuText(), buildMainMenuInteractive());
 };
 
 module.exports = {

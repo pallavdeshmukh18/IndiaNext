@@ -9,6 +9,7 @@ const alertRoutes = require("./routes/alertRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const authRoutes = require("./routes/auth");
 const legacyAuthRoutes = require("./routes/authRoutes");
+const { sendInteractiveMessage } = require("./bot/twilioInteractive");
 const { handleIncomingWhatsappMessage } = require("./bot/whatsappBot");
 const historyRoutes = require("./routes/historyRoutes");
 const scanRoutes = require("./routes/scan");
@@ -23,8 +24,17 @@ app.use(express.json());
 app.post("/whatsapp", express.urlencoded({ extended: false }), async (req, res) => {
   try {
     const botResponse = await handleIncomingWhatsappMessage(req.body);
+    const sentInteractive = botResponse.interactive
+      ? await sendInteractiveMessage({
+          to: req.body.From,
+          interactive: botResponse.interactive,
+        })
+      : false;
     const twiml = new twilio.twiml.MessagingResponse();
-    twiml.message(botResponse.message);
+
+    if (!sentInteractive || botResponse.sendTextAlongsideInteractive) {
+      twiml.message(botResponse.message);
+    }
 
     res.type("text/xml");
     res.send(twiml.toString());
