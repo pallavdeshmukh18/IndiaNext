@@ -12,6 +12,27 @@ const mapRiskLevelEnum = (riskScore) => {
     return "LOW";
 };
 
+const parseBoolean = (value) => {
+    if (typeof value === 'boolean') return value;
+
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (normalized === 'true') return true;
+        if (normalized === 'false') return false;
+    }
+
+    return Boolean(value);
+};
+
+const toDataUriFromUploadedFile = (file) => {
+    if (!file?.buffer || !file.buffer.length) {
+        return null;
+    }
+
+    const mimeType = file.mimetype || 'application/octet-stream';
+    return `data:${mimeType};base64,${file.buffer.toString('base64')}`;
+};
+
 const analyzeThreat = async (req, res) => {
     try {
         const { input } = req.body;
@@ -67,9 +88,14 @@ const analyzeSecuritySuite = async (req, res) => {
             saveToLog
         } = req.body || {};
 
+        const uploadedImageFile = req.file || req.files?.image?.[0] || req.files?.imageFile?.[0] || null;
+        const uploadedImageBase64 = toDataUriFromUploadedFile(uploadedImageFile);
+        const effectiveImageBase64 = imageBase64 || uploadedImageBase64;
+        const shouldSaveToLog = parseBoolean(saveToLog);
+
         const hasInput = Boolean(
             messageText || url || promptInput || logText || generatedText ||
-            imageUrl || imageBase64 || audioUrl || audioBase64
+            imageUrl || effectiveImageBase64 || audioUrl || audioBase64
         );
 
         if (!hasInput) {
@@ -85,7 +111,7 @@ const analyzeSecuritySuite = async (req, res) => {
             logText,
             generatedText,
             imageUrl,
-            imageBase64,
+            imageBase64: effectiveImageBase64,
             audioUrl,
             audioBase64
         });
@@ -97,14 +123,14 @@ const analyzeSecuritySuite = async (req, res) => {
 
         let logId = null;
 
-        if (saveToLog) {
+        if (shouldSaveToLog) {
             const contentSummary = JSON.stringify({
                 messageText: messageText ? messageText.slice(0, 500) : "",
                 url: url || "",
                 promptInput: promptInput ? promptInput.slice(0, 300) : "",
                 logText: logText ? logText.slice(0, 500) : "",
                 generatedText: generatedText ? generatedText.slice(0, 500) : "",
-                hasImageInput: Boolean(imageUrl || imageBase64),
+                hasImageInput: Boolean(imageUrl || effectiveImageBase64),
                 hasAudioInput: Boolean(audioUrl || audioBase64)
             });
 

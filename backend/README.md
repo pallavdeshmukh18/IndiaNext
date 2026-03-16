@@ -110,6 +110,21 @@ Request body (all fields optional, but at least one required):
 }
 ```
 
+Multipart image upload is also supported for Postman-style file upload.
+
+- Method: `POST /api/threats/suite-analyze`
+- Body type: `form-data`
+- File field: `image` (or `imageFile`)
+- Optional field: `saveToLog` (`true` or `false`)
+
+Example `curl` upload:
+
+```bash
+curl -X POST http://localhost:8000/api/threats/suite-analyze \
+  -F "image=@/absolute/path/to/image.png" \
+  -F "saveToLog=false"
+```
+
 Response includes:
 
 - per-detector outputs in `checks`
