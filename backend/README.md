@@ -23,6 +23,7 @@ Use a single env file for the backend:
 
 - `MONGO_URI`
 - `JWT_SECRET`
+- `FRONTEND_APP_URL` (recommended for Gmail OAuth redirect back to the web app)
 - `HF_INFERENCE_MODE` (`api` recommended for lightweight hosted inference)
 
 When using API mode, local model files are not required.
