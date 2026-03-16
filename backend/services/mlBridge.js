@@ -4,6 +4,11 @@ const util = require("util");
 const { MODEL_REGISTRY, classifyText } = require("./hfModelService");
 
 const execFileAsync = util.promisify(execFile);
+const WINDOWS_PYTHON_ERROR_SNIPPETS = [
+  "Python was not found",
+  "not recognized as an internal or external command",
+  "is not recognized"
+];
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -125,6 +130,60 @@ function buildEmailPhishingExplanation(isPhishing, indicators = [], phishingProb
 }
 
 async function analyzeEmailHfPhishing(emailData = {}) {
+function getPythonCandidates() {
+  const configured = String(process.env.PYTHON_BIN || "").trim();
+  const candidates = [];
+
+  if (configured) {
+    candidates.push(configured);
+  }
+
+  if (process.platform === "win32") {
+    candidates.push("py", "python", "python3");
+  } else {
+    candidates.push("python3", "python");
+  }
+
+  return [...new Set(candidates.filter(Boolean))];
+}
+
+function isMissingPythonError(error) {
+  const message = String(error?.stderr || error?.message || "").toLowerCase();
+  return WINDOWS_PYTHON_ERROR_SNIPPETS.some((snippet) => message.includes(snippet.toLowerCase())) || error?.code === "ENOENT";
+}
+
+async function runLocalEmailModel(scriptPath, emailData) {
+  const candidates = getPythonCandidates();
+  let lastError = null;
+
+  for (const pythonBin of candidates) {
+    try {
+      return await execFileAsync(pythonBin, [scriptPath, JSON.stringify(emailData)], {
+        maxBuffer: 1024 * 1024,
+      });
+    } catch (error) {
+      lastError = error;
+      if (!isMissingPythonError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  const configuredHint = process.env.PYTHON_BIN
+    ? ` Current PYTHON_BIN is "${process.env.PYTHON_BIN}".`
+    : "";
+  const fallbackHint =
+    process.platform === "win32"
+      ? ' Install Python and set `PYTHON_BIN=py` or `PYTHON_BIN=python` in backend/.env.'
+      : ' Install Python and set `PYTHON_BIN=python3` in backend/.env.';
+
+  throw new Error(
+    `Unable to find a working Python executable for email scanning.${configuredHint}${fallbackHint}${
+      lastError?.message ? ` Last error: ${lastError.message}` : ""
+    }`
+  );
+}
+
   const emailText = buildEmailModelInput(emailData);
 
   if (!emailText) {
@@ -200,11 +259,8 @@ async function analyzeEmailHfPhishing(emailData = {}) {
 
 async function analyzeEmail(emailData) {
   const scriptPath = path.join(__dirname, "ml_bridge.py");
-  const pythonBin = process.env.PYTHON_BIN || "python3";
   const [{ stdout }, hfPhishingAnalysis] = await Promise.all([
-    execFileAsync(pythonBin, [scriptPath, JSON.stringify(emailData)], {
-      maxBuffer: 1024 * 1024,
-    }),
+    runLocalEmailModel(scriptPath, emailData),
     analyzeEmailHfPhishing(emailData)
   ]);
 
