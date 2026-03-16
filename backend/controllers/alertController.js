@@ -4,7 +4,7 @@ const fetchAlerts = async (req, res) => {
 
     try {
 
-        const alerts = await getHighRiskAlerts();
+        const alerts = await getHighRiskAlerts(req.user._id);
 
         res.json({
             success: true,

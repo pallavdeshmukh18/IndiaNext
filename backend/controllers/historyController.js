@@ -1,21 +1,19 @@
 const ScanLog = require("../models/ScanLog");
 
-
 const getScanHistory = async (req, res) => {
     try {
-
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
-
         const skip = (page - 1) * limit;
+        const query = { user: req.user._id };
 
         const scans = await ScanLog
-            .find()
+            .find(query)
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        const total = await ScanLog.countDocuments();
+        const total = await ScanLog.countDocuments(query);
 
         res.json({
             page,
@@ -34,16 +32,13 @@ const getScanHistory = async (req, res) => {
     }
 };
 
-module.exports = {
-    getScanHistory
-};
-
-
 // GET single scan
 const getScanById = async (req, res) => {
     try {
-
-        const scan = await ScanLog.findById(req.params.id);
+        const scan = await ScanLog.findOne({
+            _id: req.params.id,
+            user: req.user._id
+        });
 
         if (!scan) {
             return res.status(404).json({

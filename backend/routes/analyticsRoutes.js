@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { protect } = require("../middleware/authMiddleware");
 
 const {
 fetchAnalytics,
@@ -7,8 +8,8 @@ fetchAnalytics,
     fetchThreatTypes
 } = require("../controllers/analyticsController");
 
-router.get("/analytics", fetchAnalytics);
-router.get("/analytics/trends", fetchThreatTrends);
-router.get("/analytics/threat-types", fetchThreatTypes);
+router.get("/analytics", protect, fetchAnalytics);
+router.get("/analytics/trends", protect, fetchThreatTrends);
+router.get("/analytics/threat-types", protect, fetchThreatTypes);
 
 module.exports = router;

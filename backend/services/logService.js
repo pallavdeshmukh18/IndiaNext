@@ -1,9 +1,10 @@
 const ScanLog = require("../models/ScanLog");
 
-const saveScanResult = async (scanData) => {
+const saveScanResult = async (userId, scanData) => {
     try {
 
         const scan = new ScanLog({
+            user: userId,
             inputType: scanData.inputType,
             content: scanData.content,
             prediction: scanData.prediction,

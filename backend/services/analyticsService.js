@@ -1,13 +1,14 @@
 const ScanLog = require("../models/ScanLog");
 
 // overall statistics
-const getAnalytics = async () => {
+const getAnalytics = async (userId) => {
+    const query = { user: userId };
 
-    const totalScans = await ScanLog.countDocuments();
+    const totalScans = await ScanLog.countDocuments(query);
 
-    const highRisk = await ScanLog.countDocuments({ riskLevel: "HIGH" });
-    const mediumRisk = await ScanLog.countDocuments({ riskLevel: "MEDIUM" });
-    const lowRisk = await ScanLog.countDocuments({ riskLevel: "LOW" });
+    const highRisk = await ScanLog.countDocuments({ ...query, riskLevel: "HIGH" });
+    const mediumRisk = await ScanLog.countDocuments({ ...query, riskLevel: "MEDIUM" });
+    const lowRisk = await ScanLog.countDocuments({ ...query, riskLevel: "LOW" });
 
     return {
         totalScans,
@@ -17,9 +18,14 @@ const getAnalytics = async () => {
     };
 };
 
-const getThreatTypes = async () => {
+const getThreatTypes = async (userId) => {
 
     const threats = await ScanLog.aggregate([
+        {
+            $match: {
+                user: userId
+            }
+        },
         {
             $group: {
                 _id: "$prediction",
@@ -38,9 +44,14 @@ const getThreatTypes = async () => {
 
 
 // SOC threat trend analytics
-const getThreatTrends = async () => {
+const getThreatTrends = async (userId) => {
 
     const trends = await ScanLog.aggregate([
+        {
+            $match: {
+                user: userId
+            }
+        },
         {
             $group: {
                 _id: {

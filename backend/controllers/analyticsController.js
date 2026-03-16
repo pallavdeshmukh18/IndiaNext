@@ -9,7 +9,7 @@ const fetchThreatTypes = async (req, res) => {
 
     try {
 
-        const threats = await getThreatTypes();
+        const threats = await getThreatTypes(req.user._id);
 
         res.json({
             success: true,
@@ -29,7 +29,7 @@ const fetchThreatTypes = async (req, res) => {
 const fetchAnalytics = async (req, res) => {
     try {
 
-        const analytics = await getAnalytics();
+        const analytics = await getAnalytics(req.user._id);
 
         res.json({
             success: true,
@@ -49,7 +49,7 @@ const fetchThreatTrends = async (req, res) => {
 
     try {
 
-        const trends = await getThreatTrends();
+        const trends = await getThreatTrends(req.user._id);
 
         res.json({
             success: true,

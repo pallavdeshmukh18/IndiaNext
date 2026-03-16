@@ -1,9 +1,12 @@
 const ScanLog = require("../models/ScanLog");
 
-const getHighRiskAlerts = async () => {
+const getHighRiskAlerts = async (userId) => {
 
     const alerts = await ScanLog
-        .find({ riskLevel: "HIGH" })
+        .find({
+            user: userId,
+            riskLevel: "HIGH"
+        })
         .sort({ createdAt: -1 })
         .limit(20);
 

@@ -21,7 +21,7 @@ const analyzeThreat = async (req, res) => {
         else if (analysisOutput.riskScore > 40) riskLevelEnum = "MEDIUM";
 
         // Call Dev B's logService to persist the scan result
-        const savedLog = await saveScanResult({
+        const savedLog = await saveScanResult(req.user._id, {
             inputType: req.body.inputType || "text",
             content: input,
             prediction: analysisOutput.threatType,
