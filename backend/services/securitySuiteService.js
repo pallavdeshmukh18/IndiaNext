@@ -28,6 +28,123 @@ function mapRiskLevel(score) {
   return "LOW";
 }
 
+function uniqueStrings(values = []) {
+  const seen = new Set();
+  const result = [];
+
+  for (const value of values) {
+    const normalized = String(value || "").trim();
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(normalized);
+  }
+
+  return result;
+}
+
+function summarizeCandidates(candidates = [], limit = 3) {
+  return (Array.isArray(candidates) ? candidates : [])
+    .slice(0, limit)
+    .map((candidate) => ({
+      label: String(candidate?.label || "unknown"),
+      score: clamp(Number(candidate?.score || 0), 0, 1),
+      confidencePercent: Number((clamp(Number(candidate?.score || 0), 0, 1) * 100).toFixed(1))
+    }));
+}
+
+function buildExplainability({
+  detector,
+  model,
+  source,
+  threatType,
+  riskScore,
+  riskLevel,
+  label,
+  confidence,
+  explanation,
+  indicators = [],
+  candidates = []
+}) {
+  return {
+    detector,
+    model,
+    source,
+    threatType,
+    riskScore: clamp(Number(riskScore || 0), 0, 100),
+    riskLevel,
+    label: label || "unknown",
+    confidence: clamp(Number(confidence || 0), 0, 1),
+    confidencePercent: Number((clamp(Number(confidence || 0), 0, 1) * 100).toFixed(1)),
+    summary: explanation,
+    indicators: uniqueStrings(indicators).slice(0, 5),
+    topCandidates: summarizeCandidates(candidates)
+  };
+}
+
+function matchIndicators(text, rules = []) {
+  const normalized = String(text || "").toLowerCase();
+  const hits = [];
+
+  for (const rule of rules) {
+    if (!rule) continue;
+    const label = typeof rule === "string" ? rule : rule.label;
+    const matcher = typeof rule === "string" ? rule : rule.matcher;
+
+    if (!label || !matcher) continue;
+
+    if (typeof matcher === "string" && normalized.includes(matcher.toLowerCase())) {
+      hits.push(label);
+      continue;
+    }
+
+    if (matcher instanceof RegExp && matcher.test(normalized)) {
+      hits.push(label);
+    }
+  }
+
+  return uniqueStrings(hits);
+}
+
+function collectUrlIndicators(url) {
+  const normalized = String(url || "").trim().toLowerCase();
+  if (!normalized) return [];
+
+  const indicators = [];
+
+  if (/@|%40/.test(normalized)) indicators.push("URL hides destination with @ encoding");
+  if (/xn--/.test(normalized)) indicators.push("Punycode domain can mask lookalike characters");
+  if (/https?:\/\/(\d{1,3}\.){3}\d{1,3}/.test(normalized)) indicators.push("Direct IP host instead of a normal domain");
+  if (/\.(xyz|top|click|gq|tk|work|support)([\/:?#]|$)/.test(normalized)) indicators.push("High-risk top-level domain");
+  if (/(login|verify|secure|update|reset|wallet|bank|kyc|otp|signin)/.test(normalized)) indicators.push("Credential-harvesting language in the URL path");
+
+  const domain = normalized.replace(/^https?:\/\//, "").split(/[/?#]/)[0];
+  const subdomainCount = domain ? Math.max(domain.split(".").length - 2, 0) : 0;
+  if (subdomainCount >= 2) indicators.push("Multiple subdomains increase spoofing risk");
+  if (normalized.length >= 80) indicators.push("Long URL structure is often used to obscure intent");
+
+  return uniqueStrings(indicators);
+}
+
+function buildDetectorExplanation(baseSummary, indicators = [], candidates = []) {
+  const parts = [String(baseSummary || "").trim()].filter(Boolean);
+  const normalizedIndicators = uniqueStrings(indicators);
+  const candidateSummary = summarizeCandidates(candidates)
+    .map((candidate) => `${candidate.label} (${candidate.confidencePercent}%)`)
+    .join(", ");
+
+  if (normalizedIndicators.length) {
+    parts.push(`Key signals: ${normalizedIndicators.slice(0, 4).join(", ")}.`);
+  }
+
+  if (candidateSummary) {
+    parts.push(`Top model outputs: ${candidateSummary}.`);
+  }
+
+  return parts.join(" ");
+}
+
 function extractFirstUrl(text) {
   if (!text || typeof text !== "string") return null;
   const match = text.match(URL_REGEX);
@@ -61,24 +178,58 @@ function buildDetectorOutput({
   label,
   confidence,
   candidates,
+  indicators = [],
+  explainability,
   source = "huggingface"
 }) {
+  const normalizedRiskScore = clamp(Number(riskScore || 0), 0, 100);
+  const riskLevel = mapRiskLevel(normalizedRiskScore);
+  const normalizedIndicators = uniqueStrings(indicators);
+  const normalizedCandidates = Array.isArray(candidates) ? candidates.slice(0, 5) : [];
+  const finalExplanation = String(explanation || "").trim() || "No explanation returned.";
+
   return {
     detector,
     model,
     source,
     threatType,
     isSuspicious,
-    riskScore: clamp(Number(riskScore || 0), 0, 100),
+    riskScore: normalizedRiskScore,
+    riskLevel,
     confidence: clamp(Number(confidence || 0), 0, 1),
     label: label || "unknown",
-    explanation,
-    candidates: Array.isArray(candidates) ? candidates.slice(0, 5) : []
+    explanation: finalExplanation,
+    indicators: normalizedIndicators,
+    explainability:
+      explainability ||
+      buildExplainability({
+        detector,
+        model,
+        source,
+        threatType,
+        riskScore: normalizedRiskScore,
+        riskLevel,
+        label,
+        confidence,
+        explanation: finalExplanation,
+        indicators: normalizedIndicators,
+        candidates: normalizedCandidates
+      }),
+    candidates: normalizedCandidates
   };
 }
 
 async function detectPhishingMessaging(text) {
   const normalized = normalizeText(text);
+  const keywordIndicators = matchIndicators(normalized, [
+    { matcher: "urgent", label: "Urgency wording detected" },
+    { matcher: "verify your account", label: "Account verification request" },
+    { matcher: "click here", label: "Direct call-to-click language" },
+    { matcher: "account suspended", label: "Account suspension scare tactic" },
+    { matcher: "otp", label: "Sensitive OTP request" },
+    { matcher: "password", label: "Password-related request" },
+    { matcher: "bank", label: "Banking theme detected" }
+  ]);
   if (!normalized) {
     return buildDetectorOutput({
       detector: "phishingMessaging",
@@ -89,7 +240,8 @@ async function detectPhishingMessaging(text) {
       riskScore: 0,
       explanation: "No text provided for phishing-message detection.",
       label: "none",
-      confidence: 0
+      confidence: 0,
+      indicators: []
     });
   }
 
@@ -121,7 +273,12 @@ async function detectPhishingMessaging(text) {
       label: prediction.label,
       confidence: prediction.score,
       candidates: prediction.candidates,
-      explanation: `Email/SMS phishing classifier label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`
+      indicators: keywordIndicators,
+      explanation: buildDetectorExplanation(
+        `Email/SMS phishing classifier label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`,
+        keywordIndicators,
+        prediction.candidates
+      )
     });
   } catch (error) {
     const lower = normalized.toLowerCase();
@@ -150,7 +307,11 @@ async function detectPhishingMessaging(text) {
       riskScore,
       label: "heuristic",
       confidence: hits ? clamp(hits / heuristicKeywords.length, 0, 1) : 0,
-      explanation: `Fallback heuristic applied because model call failed: ${error.message}`
+      indicators: keywordIndicators,
+      explanation: buildDetectorExplanation(
+        `Fallback heuristic applied because model call failed: ${error.message}`,
+        keywordIndicators
+      )
     });
   }
 }
@@ -175,6 +336,7 @@ async function runLocalUrlModel(url) {
 
 async function detectMaliciousUrl(urlInput) {
   const normalizedUrl = normalizeText(urlInput, 2048);
+  const urlIndicators = collectUrlIndicators(normalizedUrl);
   if (!normalizedUrl) {
     return buildDetectorOutput({
       detector: "maliciousUrl",
@@ -185,7 +347,8 @@ async function detectMaliciousUrl(urlInput) {
       riskScore: 0,
       explanation: "No URL provided for malicious-URL detection.",
       label: "none",
-      confidence: 0
+      confidence: 0,
+      indicators: []
     });
   }
 
@@ -235,7 +398,12 @@ async function detectMaliciousUrl(urlInput) {
       label: prediction.label,
       confidence: prediction.score,
       candidates: prediction.candidates,
-      explanation: `URL classifier label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`
+      indicators: urlIndicators,
+      explanation: buildDetectorExplanation(
+        `URL classifier label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`,
+        urlIndicators,
+        prediction.candidates
+      )
     });
   } catch (hfError) {
     try {
@@ -249,7 +417,11 @@ async function detectMaliciousUrl(urlInput) {
         riskScore: local.riskScore,
         label: local.label,
         confidence: local.score,
-        explanation: `Used local URL model fallback. ${local.explanation}`
+        indicators: urlIndicators,
+        explanation: buildDetectorExplanation(
+          `Used local URL model fallback. ${local.explanation}`,
+          urlIndicators
+        )
       });
     } catch (localError) {
       const lower = normalizedUrl.toLowerCase();
@@ -269,7 +441,11 @@ async function detectMaliciousUrl(urlInput) {
         riskScore,
         label: "heuristic",
         confidence: clamp(hits / riskyHints.length, 0, 1),
-        explanation: `Fallback heuristic used because HF and local model failed. HF error: ${hfError.message}. Local error: ${localError.message}.`
+        indicators: urlIndicators,
+        explanation: buildDetectorExplanation(
+          `Fallback heuristic used because HF and local model failed. HF error: ${hfError.message}. Local error: ${localError.message}.`,
+          urlIndicators
+        )
       });
     }
   }
@@ -277,6 +453,13 @@ async function detectMaliciousUrl(urlInput) {
 
 async function detectPromptInjection(text) {
   const normalized = normalizeText(text);
+  const promptIndicators = matchIndicators(normalized, [
+    { matcher: "ignore previous instructions", label: "Instruction override attempt" },
+    { matcher: "system prompt", label: "References hidden system prompt" },
+    { matcher: "jailbreak", label: "Jailbreak language detected" },
+    { matcher: "bypass", label: "Safety bypass request" },
+    { matcher: "you are now", label: "Role reassignment prompt" }
+  ]);
   if (!normalized) {
     return buildDetectorOutput({
       detector: "promptInjection",
@@ -287,7 +470,8 @@ async function detectPromptInjection(text) {
       riskScore: 0,
       explanation: "No text provided for prompt-injection detection.",
       label: "none",
-      confidence: 0
+      confidence: 0,
+      indicators: []
     });
   }
 
@@ -311,7 +495,12 @@ async function detectPromptInjection(text) {
       label: prediction.label,
       confidence: prediction.score,
       candidates: prediction.candidates,
-      explanation: `Prompt guard model label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`
+      indicators: promptIndicators,
+      explanation: buildDetectorExplanation(
+        `Prompt guard model label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`,
+        promptIndicators,
+        prediction.candidates
+      )
     });
   } catch (error) {
     const lower = normalized.toLowerCase();
@@ -337,13 +526,27 @@ async function detectPromptInjection(text) {
       riskScore,
       label: "heuristic",
       confidence: clamp(hits / keywords.length, 0, 1),
-      explanation: `Fallback heuristic applied because prompt-guard model call failed: ${error.message}`
+      indicators: promptIndicators,
+      explanation: buildDetectorExplanation(
+        `Fallback heuristic applied because prompt-guard model call failed: ${error.message}`,
+        promptIndicators
+      )
     });
   }
 }
 
 async function detectAnomalousLog(logText) {
   const normalized = normalizeText(logText);
+  const logIndicators = matchIndicators(normalized, [
+    { matcher: "failed password", label: "Repeated failed authentication attempt" },
+    { matcher: "unauthorized", label: "Unauthorized access marker" },
+    { matcher: "sudo", label: "Privileged command execution" },
+    { matcher: "powershell -enc", label: "Encoded PowerShell execution" },
+    { matcher: "cmd.exe /c", label: "Shell execution from log" },
+    { matcher: "union select", label: "SQL injection artifact" },
+    { matcher: "/etc/passwd", label: "Sensitive file access reference" },
+    { matcher: "privilege escalation", label: "Privilege escalation indicator" }
+  ]);
   if (!normalized) {
     return buildDetectorOutput({
       detector: "anomalyLogs",
@@ -354,7 +557,8 @@ async function detectAnomalousLog(logText) {
       riskScore: 0,
       explanation: "No log text provided for anomaly detection.",
       label: "none",
-      confidence: 0
+      confidence: 0,
+      indicators: []
     });
   }
 
@@ -387,7 +591,12 @@ async function detectAnomalousLog(logText) {
       label: prediction.label,
       confidence: prediction.score,
       candidates: prediction.candidates,
-      explanation: `SecureBERT label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`
+      indicators: logIndicators,
+      explanation: buildDetectorExplanation(
+        `SecureBERT label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`,
+        logIndicators,
+        prediction.candidates
+      )
     });
   } catch (error) {
     const lower = normalized.toLowerCase();
@@ -416,13 +625,26 @@ async function detectAnomalousLog(logText) {
       riskScore,
       label: "heuristic",
       confidence: clamp(hits / indicators.length, 0, 1),
-      explanation: `Fallback heuristic applied because SecureBERT call failed: ${error.message}`
+      indicators: logIndicators,
+      explanation: buildDetectorExplanation(
+        `Fallback heuristic applied because SecureBERT call failed: ${error.message}`,
+        logIndicators
+      )
     });
   }
 }
 
 async function detectAIGeneratedText(text) {
   const normalized = normalizeText(text);
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const uniqueTokens = new Set(tokens.map((token) => token.toLowerCase()));
+  const diversity = tokens.length ? uniqueTokens.size / tokens.length : 0;
+  const aiIndicators = [];
+  if (tokens.length >= 40) aiIndicators.push("Long-form generated text sample");
+  if (diversity <= 0.62) aiIndicators.push("Low token diversity / repetitive phrasing");
+  if (/(as an ai|language model|i cannot comply|i cannot provide)/i.test(normalized)) {
+    aiIndicators.push("Model-style refusal phrasing detected");
+  }
   if (!normalized) {
     return buildDetectorOutput({
       detector: "aiGeneratedContent",
@@ -433,7 +655,8 @@ async function detectAIGeneratedText(text) {
       riskScore: 0,
       explanation: "No text provided for AI-generated-content detection.",
       label: "none",
-      confidence: 0
+      confidence: 0,
+      indicators: []
     });
   }
 
@@ -457,12 +680,14 @@ async function detectAIGeneratedText(text) {
       label: prediction.label,
       confidence: prediction.score,
       candidates: prediction.candidates,
-      explanation: `AI-content detector label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`
+      indicators: aiIndicators,
+      explanation: buildDetectorExplanation(
+        `AI-content detector label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`,
+        aiIndicators,
+        prediction.candidates
+      )
     });
   } catch (error) {
-    const tokens = normalized.split(/\s+/).filter(Boolean);
-    const uniqueTokens = new Set(tokens.map((token) => token.toLowerCase()));
-    const diversity = tokens.length ? uniqueTokens.size / tokens.length : 0;
     const riskScore = clamp(Math.round((1 - diversity) * 80), 0, 100);
 
     return buildDetectorOutput({
@@ -474,7 +699,11 @@ async function detectAIGeneratedText(text) {
       riskScore,
       label: "heuristic",
       confidence: clamp(1 - diversity, 0, 1),
-      explanation: `Fallback burstiness heuristic used because detector call failed: ${error.message}`
+      indicators: aiIndicators,
+      explanation: buildDetectorExplanation(
+        `Fallback burstiness heuristic used because detector call failed: ${error.message}`,
+        aiIndicators
+      )
     });
   }
 }
@@ -490,7 +719,8 @@ async function detectDeepfakeImage(mediaInput) {
       riskScore: 0,
       explanation: "No image input provided for deepfake image detection.",
       label: "none",
-      confidence: 0
+      confidence: 0,
+      indicators: []
     });
   }
 
@@ -517,7 +747,16 @@ async function detectDeepfakeImage(mediaInput) {
       label: prediction.label,
       confidence: prediction.score,
       candidates: prediction.candidates,
-      explanation: `Deepfake image classifier label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`
+      indicators: prediction.candidates
+        .filter((candidate) => /deepfake|fake|spoof|synthetic/i.test(String(candidate?.label || "")))
+        .map((candidate) => `Synthetic-media candidate: ${candidate.label}`),
+      explanation: buildDetectorExplanation(
+        `Deepfake image classifier label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`,
+        prediction.candidates
+          .filter((candidate) => /deepfake|fake|spoof|synthetic/i.test(String(candidate?.label || "")))
+          .map((candidate) => `Synthetic-media candidate: ${candidate.label}`),
+        prediction.candidates
+      )
     });
   } catch (error) {
     return buildDetectorOutput({
@@ -529,7 +768,11 @@ async function detectDeepfakeImage(mediaInput) {
       riskScore: 0,
       label: "unavailable",
       confidence: 0,
-      explanation: `Deepfake image model unavailable: ${error.message}`
+      indicators: ["Image deepfake model unavailable"],
+      explanation: buildDetectorExplanation(
+        `Deepfake image model unavailable: ${error.message}`,
+        ["Image deepfake model unavailable"]
+      )
     });
   }
 }
@@ -545,7 +788,8 @@ async function detectDeepfakeAudio(mediaInput) {
       riskScore: 0,
       explanation: "No audio input provided for deepfake audio detection.",
       label: "none",
-      confidence: 0
+      confidence: 0,
+      indicators: []
     });
   }
 
@@ -572,7 +816,16 @@ async function detectDeepfakeAudio(mediaInput) {
       label: prediction.label,
       confidence: prediction.score,
       candidates: prediction.candidates,
-      explanation: `Deepfake audio classifier label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`
+      indicators: prediction.candidates
+        .filter((candidate) => /deepfake|fake|spoof|synthetic/i.test(String(candidate?.label || "")))
+        .map((candidate) => `Synthetic-audio candidate: ${candidate.label}`),
+      explanation: buildDetectorExplanation(
+        `Deepfake audio classifier label: ${prediction.label} (${(prediction.score * 100).toFixed(1)}%).`,
+        prediction.candidates
+          .filter((candidate) => /deepfake|fake|spoof|synthetic/i.test(String(candidate?.label || "")))
+          .map((candidate) => `Synthetic-audio candidate: ${candidate.label}`),
+        prediction.candidates
+      )
     });
   } catch (error) {
     return buildDetectorOutput({
@@ -584,7 +837,11 @@ async function detectDeepfakeAudio(mediaInput) {
       riskScore: 0,
       label: "unavailable",
       confidence: 0,
-      explanation: `Deepfake audio model unavailable: ${error.message}`
+      indicators: ["Audio deepfake model unavailable"],
+      explanation: buildDetectorExplanation(
+        `Deepfake audio model unavailable: ${error.message}`,
+        ["Audio deepfake model unavailable"]
+      )
     });
   }
 }
@@ -593,7 +850,7 @@ function summarizeSuite(checks) {
   const summaries = [];
   for (const [name, result] of Object.entries(checks)) {
     summaries.push(
-      `${name}: ${result.threatType} (${result.riskScore}%) via ${result.source}`
+      `${name}: ${result.threatType} (${result.riskScore}%) via ${result.source}${result.indicators?.length ? ` [${result.indicators.slice(0, 2).join(", ")}]` : ""}`
     );
   }
   return summaries.join(" | ");
@@ -701,6 +958,7 @@ async function runSecuritySuiteScan(payload = {}) {
     overallRiskScore,
     riskLevel: mapRiskLevel(overallRiskScore),
     isSuspicious: overallRiskScore >= 40,
+    indicators: uniqueStrings(Object.values(checks).flatMap((result) => result.indicators || [])).slice(0, 8),
     summary: summarizeSuite(checks)
   };
 }
@@ -741,8 +999,27 @@ async function analyzeUnifiedThreatInput(input) {
   return {
     isSuspicious: riskScore >= 40,
     riskScore,
+    riskLevel: mapRiskLevel(riskScore),
     threatType: primary && riskScore >= 40 ? primary.threatType : "None",
     explanation: summarizeSuite(checks),
+    indicators: uniqueStrings(
+      (primary?.indicators && primary.indicators.length
+        ? primary.indicators
+        : Object.values(checks).flatMap((result) => result.indicators || []))
+    ).slice(0, 6),
+    explainability: {
+      summary: primary?.explanation || summarizeSuite(checks),
+      primaryDetector: primary?.detector || null,
+      primaryModel: primary?.model || null,
+      indicators: uniqueStrings(
+        (primary?.indicators && primary.indicators.length
+          ? primary.indicators
+          : Object.values(checks).flatMap((result) => result.indicators || []))
+      ).slice(0, 6),
+      components: Object.fromEntries(
+        Object.entries(checks).map(([key, value]) => [key, value.explainability || null])
+      )
+    },
     components: checks
   };
 }

@@ -21,6 +21,15 @@ async function analyzeEmail(emailData) {
     result.explanation = [`Model confidence: ${(Number(result.scam_probability) * 100).toFixed(1)}%`];
   }
 
+  if (!result.explainability) {
+    result.explainability = {
+      label: result.label || "unknown",
+      confidencePercent: Number((Number(result.scam_probability || 0) * 100).toFixed(1)),
+      summary: Array.isArray(result.explanation) ? result.explanation.join(" ") : String(result.explanation || ""),
+      indicators: Array.isArray(result.explanation) ? result.explanation.slice(0, 5) : []
+    };
+  }
+
   return result;
 }
 

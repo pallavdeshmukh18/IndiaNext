@@ -86,6 +86,18 @@ def build_explanation(features):
     return explanation
 
 
+def build_explainability_summary(label, phishing_probability, explanation_terms):
+    confidence_pct = round(float(phishing_probability) * 100, 1)
+
+    if explanation_terms:
+        return (
+            f"Email classifier predicted {label} with {confidence_pct}% phishing probability. "
+            f"Top weighted terms: {', '.join(explanation_terms[:5])}."
+        )
+
+    return f"Email classifier predicted {label} with {confidence_pct}% phishing probability."
+
+
 def main():
     raw_payload = sys.argv[1] if len(sys.argv) > 1 else "{}"
     payload = json.loads(raw_payload or "{}")
@@ -101,6 +113,12 @@ def main():
         "scam_probability": round(phishing_probability, 6),
         "label": label,
         "explanation": explanation,
+        "explainability": {
+            "label": label,
+            "confidencePercent": round(phishing_probability * 100, 1),
+            "summary": build_explainability_summary(label, phishing_probability, explanation),
+            "indicators": explanation[:5],
+        },
     }
 
     print(json.dumps(result))

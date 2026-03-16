@@ -4,6 +4,16 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+function summarizeCandidates(candidates = [], limit = 3) {
+  return (Array.isArray(candidates) ? candidates : [])
+    .slice(0, limit)
+    .map((candidate) => ({
+      label: String(candidate?.label || "unknown"),
+      score: clamp(Number(candidate?.score || 0), 0, 1),
+      confidencePercent: Number((clamp(Number(candidate?.score || 0), 0, 1) * 100).toFixed(1))
+    }));
+}
+
 function normalizeLabel(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -71,6 +81,26 @@ async function analyzeVideoAiLikelihood({ videoUrl, videoBase64, pageUrl }) {
   );
 
   const likelihood = computeAiLikelihood(prediction);
+  const topCandidates = summarizeCandidates(prediction.candidates);
+  const indicators = [];
+
+  if (/deepfake|synthetic|generated|ai/i.test(String(likelihood.triggerLabel || ""))) {
+    indicators.push(`Synthetic-media label detected: ${likelihood.triggerLabel}`);
+  }
+
+  if (topCandidates.length) {
+    indicators.push(`Top model output confidence ${topCandidates[0].confidencePercent}%`);
+  }
+
+  const explanation = [
+    `Top model label: ${likelihood.triggerLabel}.`,
+    `Computed AI-likelihood score: ${likelihood.aiLikelihoodScore}/100.`,
+    topCandidates.length
+      ? `Top candidates: ${topCandidates.map((candidate) => `${candidate.label} (${candidate.confidencePercent}%)`).join(", ")}.`
+      : null
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return {
     aiLikelihoodScore: likelihood.aiLikelihoodScore,
@@ -80,7 +110,17 @@ async function analyzeVideoAiLikelihood({ videoUrl, videoBase64, pageUrl }) {
     pageUrl: pageUrl || null,
     sourceVideo: videoUrl || "base64_payload",
     label: prediction.label,
-    explanation: `Top model label: ${likelihood.triggerLabel}. Computed AI-likelihood from Hugging Face video model output.`,
+    explanation,
+    indicators,
+    explainability: {
+      summary: explanation,
+      classification: likelihood.classification,
+      aiLikelihoodScore: likelihood.aiLikelihoodScore,
+      modelConfidencePercent: Number((likelihood.modelConfidence * 100).toFixed(1)),
+      triggerLabel: likelihood.triggerLabel,
+      indicators,
+      topCandidates
+    },
     candidates: prediction.candidates.slice(0, 5),
     analyzedAt: new Date().toISOString()
   };
