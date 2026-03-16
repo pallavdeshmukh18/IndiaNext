@@ -48,8 +48,12 @@ function App() {
     setSession(null);
   }, []);
 
-  const handleGoogleAuth = React.useCallback(async () => {
-    throw new Error('Google authentication is not configured in this build yet.');
+  const handleGoogleAuth = React.useCallback(async ({ credential }) => {
+    const response = await authApi.googleAuth(credential);
+    const nextSession = buildSession(response);
+    saveSession(nextSession);
+    setSession(nextSession);
+    return nextSession;
   }, []);
 
   return (

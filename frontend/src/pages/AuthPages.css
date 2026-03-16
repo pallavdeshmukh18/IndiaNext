@@ -282,6 +282,17 @@
   border: 1px solid rgba(255, 59, 48, 0.2);
 }
 
+.auth-google-btn-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.auth-google-btn-wrapper > div,
+.auth-google-btn-wrapper iframe {
+  width: 100% !important;
+}
+
 .auth-footer {
   margin-top: 2rem;
   color: var(--text-muted);

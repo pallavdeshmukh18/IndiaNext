@@ -136,10 +136,9 @@ const Dashboard = ({ session }) => {
           <div className={`workspace-data-badge ${state.source}`}>
             {state.source === 'live' ? 'Live API data' : 'Demo fallback data'}
           </div>
-          <h2>Real-time cyber posture without leaving the product flow</h2>
+          <h2>Your security posture at a glance</h2>
           <p>
-            This overview condenses your scan volume, critical alerts, threat mix, and recent analyst cases into
-            the same dark, cinematic system used on the landing page.
+            See total scan volume, high-risk cases, threat distribution, and recent activity in one focused view.
           </p>
         </div>
 
@@ -171,7 +170,7 @@ const Dashboard = ({ session }) => {
           <div className="workspace-panel-header">
             <div>
               <h3>Threat activity timeline</h3>
-              <p>Daily scan volume, useful for spotting spikes and campaign clustering across channels.</p>
+              <p>Daily scan volume so spikes and coordinated campaigns are easy to spot.</p>
             </div>
             <Clock3 size={18} className="workspace-inline-icon" />
           </div>
@@ -202,7 +201,7 @@ const Dashboard = ({ session }) => {
           <div className="workspace-panel-header">
             <div>
               <h3>Top threat types</h3>
-              <p>Distribution of the classes the platform is seeing most often in your submitted content.</p>
+              <p>Breakdown of the threat categories most frequently detected in your submissions.</p>
             </div>
             <ShieldAlert size={18} className="workspace-inline-icon" />
           </div>
@@ -235,7 +234,7 @@ const Dashboard = ({ session }) => {
           <div className="workspace-panel-header">
             <div>
               <h3>Critical alerts</h3>
-              <p>High-risk items stay at the top of the queue so the analyst can act before blast radius expands.</p>
+              <p>High-risk cases are prioritized first so analysts can respond quickly.</p>
             </div>
             <AlertTriangle size={18} className="workspace-inline-icon" />
           </div>
@@ -273,7 +272,7 @@ const Dashboard = ({ session }) => {
           <div className="workspace-panel-header">
             <div>
               <h3>Recent scan activity</h3>
-              <p>Use the latest cases to trace context, rationale, and recommended remediation actions quickly.</p>
+              <p>Review recent detections with context, confidence, and recommended response steps.</p>
             </div>
             <Activity size={18} className="workspace-inline-icon" />
           </div>

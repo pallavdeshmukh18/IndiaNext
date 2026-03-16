@@ -57,8 +57,8 @@
 .center-glow-container {
     position: absolute;
     left: 45%;
-    top: 60%;
-    /* Move left and down to sit between the hands perfectly */
+    top: 48%;
+    /* Keep the centerpiece between the hands, but slightly higher in frame */
     transform: translate(-50%, -50%);
     width: 220px;
     height: 220px;
@@ -87,8 +87,8 @@
     position: absolute;
     width: 250px;
     height: 250px;
-    background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, rgba(236, 72, 153, 0.2) 40%, rgba(0, 0, 0, 0) 70%);
-    filter: blur(30px);
+    background: radial-gradient(circle, rgba(133, 141, 216, 0.28) 0%, rgba(120, 128, 186, 0.14) 42%, rgba(0, 0, 0, 0) 72%);
+    filter: blur(26px);
     z-index: 1;
     animation: glowPulse 4s ease-in-out infinite alternate;
 }

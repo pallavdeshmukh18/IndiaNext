@@ -74,10 +74,9 @@ const AlertsPage = ({ session }) => {
           <div className={`workspace-data-badge ${state.source}`}>
             {state.source === 'live' ? 'Live alert queue' : 'Demo alert queue'}
           </div>
-          <h2>High-risk detections rise to the top automatically</h2>
+          <h2>Prioritized queue for high-risk incidents</h2>
           <p>
-            The alerts view narrows the operator focus to the scans that need immediate triage and preserves the
-            mitigation context directly beside the signal.
+            Keep analyst focus on the cases that need immediate triage, with mitigation context beside each signal.
           </p>
         </div>
 
@@ -131,7 +130,7 @@ const AlertsPage = ({ session }) => {
           <div className="workspace-panel-header">
             <div>
               <h3>Response playbook</h3>
-              <p>Use the queue context to decide what to block, what to validate, and what to escalate.</p>
+              <p>Use queue context to decide what to block, verify, and escalate.</p>
             </div>
             <BellRing size={18} className="workspace-inline-icon" />
           </div>

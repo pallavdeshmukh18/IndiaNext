@@ -84,10 +84,9 @@ const HistoryPage = ({ session }) => {
           <div className={`workspace-data-badge ${state.source}`}>
             {state.source === 'live' ? 'Live history' : 'Fallback case archive'}
           </div>
-          <h2>Every detection stays searchable and explainable</h2>
+          <h2>Search every past detection</h2>
           <p>
-            The history view is where an analyst can revisit the reasoning behind a verdict, recover source context,
-            and confirm whether a case needs follow-up in the alerts queue.
+            Revisit verdict rationale, source context, and recommended action for any previous scan.
           </p>
         </div>
 
@@ -102,7 +101,7 @@ const HistoryPage = ({ session }) => {
         <div className="workspace-panel-header">
           <div>
             <h3>Filter the archive</h3>
-            <p>Search by verdict, message text, or explainability notes while narrowing by severity and channel.</p>
+            <p>Filter by verdict, risk level, channel, and text content to isolate relevant cases quickly.</p>
           </div>
           <Filter size={18} className="workspace-inline-icon" />
         </div>
@@ -185,7 +184,7 @@ const HistoryPage = ({ session }) => {
           ))
         ) : (
           <div className="empty-state">
-            No scans match the current filters. Adjust the search criteria or run a fresh analysis to seed the archive.
+            No scans match these filters. Adjust criteria or run a new analysis.
           </div>
         )}
       </section>

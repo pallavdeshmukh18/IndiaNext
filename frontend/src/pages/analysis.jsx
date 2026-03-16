@@ -112,10 +112,10 @@ const Analysis = ({ session }) => {
       <section className="workspace-page-hero">
         <div className="workspace-page-hero-copy">
           <div className="workspace-data-badge live">Guided analysis workspace</div>
-          <h2>Scan suspicious inputs the way your users actually encounter them</h2>
+          <h2>Analyze suspicious content from any channel</h2>
           <p>
-            Paste phishing emails, malicious URLs, prompt injections, message scams, or OCR text from screenshots.
-            The page uses the backend when available and falls back to a local simulator when it is not.
+            Paste phishing emails, risky URLs, message scams, prompt injections, or OCR text and run one consistent
+            detection flow.
           </p>
         </div>
 
@@ -131,7 +131,7 @@ const Analysis = ({ session }) => {
           <div className="workspace-panel-header">
             <div>
               <h3>Threat submission</h3>
-              <p>Switch the channel, load a sample if needed, then run the same detection flow your product documents promise.</p>
+              <p>Choose a channel, review the payload, and run analysis.</p>
             </div>
             <ShieldAlert size={18} className="workspace-inline-icon" />
           </div>
@@ -201,7 +201,7 @@ const Analysis = ({ session }) => {
           <div className="analysis-result-header">
             <div>
               <h3>Decision trace</h3>
-              <p className="workspace-muted">Explainability, confidence, and next actions land here after each run.</p>
+              <p className="workspace-muted">Verdict, risk score, indicators, and recommended action appear after each run.</p>
             </div>
             {result ? (
               <span className={`workspace-data-badge ${resultSource}`}>
@@ -267,14 +267,14 @@ const Analysis = ({ session }) => {
                       <CheckCircle2 size={16} />
                       {result.recommendation}
                     </strong>
-                    <p>Use the recommendation as the first response step, then move the case to history or alerts depending on severity.</p>
+                    <p>Apply this first, then move the case to history or alerts based on severity.</p>
                   </div>
                 </div>
               </div>
             </>
           ) : (
             <div className="result-placeholder">
-              Submit a payload to see the classifier verdict, risk score, explanation, and mitigation path populate this panel.
+              Submit content to populate verdict, score, explainability, and mitigation guidance.
             </div>
           )}
         </article>

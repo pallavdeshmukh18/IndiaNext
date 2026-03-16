@@ -47,6 +47,13 @@ export const authApi = {
       method: 'POST',
       body: payload
     });
+  },
+
+  googleAuth(idToken) {
+    return request('/auth/google', {
+      method: 'POST',
+      body: { idToken }
+    });
   }
 };
 

@@ -16,52 +16,52 @@ const navItems = [
   {
     to: '/app/dashboard',
     label: 'Overview',
-    caption: 'Posture, trends, and intelligence',
+    caption: 'KPIs, trends, latest cases',
     icon: LayoutDashboard
   },
   {
     to: '/app/analyze',
     label: 'Analyze',
-    caption: 'Scan links, prompts, and messages',
+    caption: 'Scan suspicious content',
     icon: Activity
   },
   {
     to: '/app/history',
     label: 'History',
-    caption: 'Review past detections',
+    caption: 'Search previous detections',
     icon: HistoryIcon
   },
   {
     to: '/app/alerts',
     label: 'Alerts',
-    caption: 'Triage high-risk activity',
+    caption: 'Triage priority incidents',
     icon: BellRing
   }
 ];
 
 const pageMeta = {
   '/app/dashboard': {
-    eyebrow: 'SOC WORKSPACE',
-    title: 'Security operations cockpit',
-    description: 'Track live posture, critical signals, and analyst-ready scan output in one product surface.',
+    eyebrow: 'OPERATIONS',
+    title: 'Security overview',
+    description: 'Track scan throughput, risk distribution, and active cases without context switching.',
     breadcrumb: 'Overview'
   },
   '/app/analyze': {
-    eyebrow: 'ACTIVE SCAN',
-    title: 'Run a fresh threat analysis',
-    description: 'Submit suspicious text, URLs, and prompt payloads without leaving the product shell.',
+    eyebrow: 'ANALYSIS',
+    title: 'Run threat analysis',
+    description: 'Submit suspicious text, URLs, prompts, or OCR snippets and get an explainable verdict.',
     breadcrumb: 'Analysis'
   },
   '/app/history': {
-    eyebrow: 'CASE ARCHIVE',
-    title: 'Review historical detections',
-    description: 'Filter previous scans by severity, channel, and content so analysts can move quickly.',
+    eyebrow: 'ARCHIVE',
+    title: 'Detection history',
+    description: 'Search prior detections by severity, channel, and rationale to speed up investigations.',
     breadcrumb: 'History'
   },
   '/app/alerts': {
-    eyebrow: 'CRITICAL QUEUE',
-    title: 'Respond to high-risk alerts',
-    description: 'Focus the queue on the threats that need immediate human action.',
+    eyebrow: 'ALERTS',
+    title: 'Priority alert queue',
+    description: 'Focus on the incidents that need immediate action and preserve response context.',
     breadcrumb: 'Alerts'
   }
 };
@@ -79,9 +79,10 @@ function getInitials(session) {
 const AppShell = ({ session, onLogout }) => {
   const location = useLocation();
   const currentMeta = pageMeta[location.pathname] || pageMeta['/app/dashboard'];
+  const routeName = location.pathname.split('/')[2] || 'dashboard';
 
   return (
-    <div className="workspace-shell">
+    <div className={`workspace-shell route-${routeName}`}>
       <aside className="workspace-sidebar glass-panel">
         <Link to="/" className="workspace-brand">
           <span className="workspace-brand-icon">
@@ -158,12 +159,12 @@ const AppShell = ({ session, onLogout }) => {
         </header>
 
         <div className="workspace-crumb glass-panel">
-          <span>Product flow</span>
+          <span>Workspace</span>
           <ChevronRight size={14} />
           <span>{currentMeta.breadcrumb}</span>
           <div className="workspace-crumb-status">
             <Sparkles size={14} />
-            Authenticated session
+            Signed in session
           </div>
         </div>
 
