@@ -1,1 +1,3 @@
 ML/phishing_mail/phishing_email.csv
+.DS_Store
+__pycache__/
