@@ -148,20 +148,50 @@ function normalizePercent(value, fallback = 0) {
   return Math.round(numeric);
 }
 
-function extractResultConfidence(result, fallbackRiskScore) {
+const inputTypeDetectorMap = {
+  messageText: 'phishingMessaging',
+  promptInput: 'promptInjection',
+  logText: 'anomalyLogs',
+  url: 'maliciousUrl',
+  generatedText: 'aiGeneratedContent',
+  imageUrl: 'deepfakeImage',
+  audioUrl: 'deepfakeAudio'
+};
+
+function extractComponentConfidence(result, detectorKey, fallbackRiskScore) {
+  if (!detectorKey) {
+    return null;
+  }
+
+  const component =
+    result.components?.[detectorKey] ||
+    result.explainability?.components?.[detectorKey] ||
+    null;
+
+  const componentConfidence = component?.confidencePercent ?? component?.confidence;
+  if (Number.isFinite(Number(componentConfidence))) {
+    return normalizePercent(componentConfidence, fallbackRiskScore);
+  }
+
+  return null;
+}
+
+function extractResultConfidence(result, fallbackRiskScore, inputType) {
   const directConfidence = Number(result.confidence);
   if (Number.isFinite(directConfidence)) {
     return normalizePercent(directConfidence, fallbackRiskScore);
   }
 
-  const primaryDetector = result.explainability?.primaryDetector;
-  const primaryComponent = primaryDetector
-    ? result.components?.[primaryDetector] || result.explainability?.components?.[primaryDetector]
-    : null;
-  const componentConfidence = primaryComponent?.confidencePercent ?? primaryComponent?.confidence;
+  const channelDetector = inputTypeDetectorMap[inputType];
+  const channelConfidence = extractComponentConfidence(result, channelDetector, fallbackRiskScore);
+  if (channelConfidence !== null) {
+    return channelConfidence;
+  }
 
-  if (Number.isFinite(Number(componentConfidence))) {
-    return normalizePercent(componentConfidence, fallbackRiskScore);
+  const primaryDetector = result.explainability?.primaryDetector;
+  const primaryConfidence = extractComponentConfidence(result, primaryDetector, fallbackRiskScore);
+  if (primaryConfidence !== null) {
+    return primaryConfidence;
   }
 
   return Math.round(fallbackRiskScore);
@@ -394,7 +424,7 @@ export function normalizeAnalysisResult(result, input, inputType) {
 
   return {
     threatType: result.threatType || result.prediction || 'Unknown Threat',
-    confidence: extractResultConfidence(result, riskScore),
+    confidence: extractResultConfidence(result, riskScore, normalizedInputType),
     riskScore,
     riskLevel: result.riskLevel || deriveRiskLevel(riskScore),
     explanation: explanationText || 'No explanation was returned by the classifier.',
