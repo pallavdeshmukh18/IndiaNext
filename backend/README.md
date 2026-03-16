@@ -21,12 +21,19 @@ Use a single env file for the backend:
 
 - `MONGO_URI`
 - `JWT_SECRET`
-- `HF_INFERENCE_MODE` (`local` recommended for offline/local models)
-- `PYTHON_BIN` (for local inference bridge, usually `python`)
+- `HF_INFERENCE_MODE` (`api` recommended for lightweight hosted inference)
 
-Do not create extra env files for model setup. The local-model setup script updates `backend/.env` directly.
+When using API mode, local model files are not required.
 
-`HF_API_TOKEN` is optional and only needed in hosted API mode.
+`HF_API_TOKEN` is recommended in API mode for better reliability and rate limits.
+
+Optional API tuning:
+
+- `HF_TIMEOUT_MS`
+- `HF_API_RETRIES`
+- `HF_RETRY_DELAY_MS`
+
+`PYTHON_BIN` is only needed for local inference mode.
 
 Optional model overrides are supported via env vars:
 
@@ -38,7 +45,11 @@ Optional model overrides are supported via env vars:
 - `HF_MODEL_ANOMALY_LOGS`
 - `HF_MODEL_AI_GENERATED_TEXT`
 
-## Local model download links
+## API-first (recommended)
+
+No local model download is required. The backend will call Hugging Face hosted inference endpoints directly for all configured models.
+
+## Optional local model download
 
 - https://huggingface.co/aamoshdahal/email-phishing-distilbert-finetuned
 - https://huggingface.co/r3ddkahili/final-complete-malicious-url-model
@@ -61,14 +72,14 @@ pip install -r ML/hf_local/requirements.txt
 python ML/hf_local/setup_models.py
 ```
 
-On Windows, if `python` does not point to the interpreter you want to use, set `PYTHON_BIN` in `backend/.env` first.
+Use this only if you explicitly want local inference mode.
 
 This will:
 
 - download all models from `ML/hf_local/models.lock.json`
 - pin lock revisions to exact commit hashes
 - copy snapshots into `ML/hf_local/models/`
-- update the single `backend/.env` file with local model paths (`HF_MODEL_*`)
+- update the single `backend/.env` file with local model paths (`HF_MODEL_*`) for local mode
 
 Offline-only verification (no internet access):
 

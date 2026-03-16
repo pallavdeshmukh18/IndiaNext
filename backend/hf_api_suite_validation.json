@@ -1,0 +1,146 @@
+{
+  "compact": {
+    "runtime": {
+      "mode": "api",
+      "configuredMode": "api",
+      "hfTokenConfigured": true
+    },
+    "models": {
+      "phishingMessaging": "aamoshdahal/email-phishing-distilbert-finetuned",
+      "maliciousUrl": "r3ddkahili/final-complete-malicious-url-model",
+      "deepfakeImage": "prithivMLmods/Deep-Fake-Detector-v2-Model",
+      "deepfakeAudio": "mo-thecreator/Deepfake-audio-detection",
+      "promptInjection": "protectai/deberta-v3-base-prompt-injection",
+      "anomalyLogs": "ehsanaghaei/SecureBERT",
+      "aiGeneratedText": "openai-community/roberta-base-openai-detector"
+    },
+    "summary": "promptInjection: None (36%) via heuristic_fallback | phishingMessaging: Phishing Message (42%) via heuristic_fallback | aiGeneratedContent: None (7%) via heuristic_fallback | anomalyLogs: None (29%) via heuristic_fallback | deepfakeAudio: Unknown (0%) via model_error | deepfakeImage: Unknown (0%) via model_error | maliciousUrl: Phishing URL (84%) via local_model_fallback",
+    "sources": {
+      "promptInjection": "heuristic_fallback",
+      "phishingMessaging": "heuristic_fallback",
+      "aiGeneratedContent": "heuristic_fallback",
+      "anomalyLogs": "heuristic_fallback",
+      "deepfakeAudio": "model_error",
+      "deepfakeImage": "model_error",
+      "maliciousUrl": "local_model_fallback"
+    },
+    "scores": {
+      "promptInjection": 36,
+      "phishingMessaging": 42,
+      "aiGeneratedContent": 7,
+      "anomalyLogs": 29,
+      "deepfakeAudio": 0,
+      "deepfakeImage": 0,
+      "maliciousUrl": 84
+    }
+  },
+  "full": {
+    "checkedAt": "2026-03-16T17:00:39.611Z",
+    "hfTokenConfigured": true,
+    "runtime": {
+      "mode": "api",
+      "configuredMode": "api",
+      "hfTokenConfigured": true
+    },
+    "models": {
+      "phishingMessaging": "aamoshdahal/email-phishing-distilbert-finetuned",
+      "maliciousUrl": "r3ddkahili/final-complete-malicious-url-model",
+      "deepfakeImage": "prithivMLmods/Deep-Fake-Detector-v2-Model",
+      "deepfakeAudio": "mo-thecreator/Deepfake-audio-detection",
+      "promptInjection": "protectai/deberta-v3-base-prompt-injection",
+      "anomalyLogs": "ehsanaghaei/SecureBERT",
+      "aiGeneratedText": "openai-community/roberta-base-openai-detector"
+    },
+    "checks": {
+      "promptInjection": {
+        "detector": "promptInjection",
+        "model": "protectai/deberta-v3-base-prompt-injection",
+        "source": "heuristic_fallback",
+        "threatType": "None",
+        "isSuspicious": false,
+        "riskScore": 36,
+        "confidence": 0.2,
+        "label": "heuristic",
+        "explanation": "Fallback heuristic applied because prompt-guard model call failed: Request failed with status code 410",
+        "candidates": []
+      },
+      "phishingMessaging": {
+        "detector": "phishingMessaging",
+        "model": "aamoshdahal/email-phishing-distilbert-finetuned",
+        "source": "heuristic_fallback",
+        "threatType": "Phishing Message",
+        "isSuspicious": true,
+        "riskScore": 42,
+        "confidence": 0.2857142857142857,
+        "label": "heuristic",
+        "explanation": "Fallback heuristic applied because model call failed: Request failed with status code 410",
+        "candidates": []
+      },
+      "aiGeneratedContent": {
+        "detector": "aiGeneratedContent",
+        "model": "openai-community/roberta-base-openai-detector",
+        "source": "heuristic_fallback",
+        "threatType": "None",
+        "isSuspicious": false,
+        "riskScore": 7,
+        "confidence": 0.09090909090909094,
+        "label": "heuristic",
+        "explanation": "Fallback burstiness heuristic used because detector call failed: Request failed with status code 410",
+        "candidates": []
+      },
+      "anomalyLogs": {
+        "detector": "anomalyLogs",
+        "model": "ehsanaghaei/SecureBERT",
+        "source": "heuristic_fallback",
+        "threatType": "None",
+        "isSuspicious": false,
+        "riskScore": 29,
+        "confidence": 0.125,
+        "label": "heuristic",
+        "explanation": "Fallback heuristic applied because SecureBERT call failed: Request failed with status code 410",
+        "candidates": []
+      },
+      "deepfakeAudio": {
+        "detector": "deepfakeAudio",
+        "model": "mo-thecreator/Deepfake-audio-detection",
+        "source": "model_error",
+        "threatType": "Unknown",
+        "isSuspicious": false,
+        "riskScore": 0,
+        "confidence": 0,
+        "label": "unavailable",
+        "explanation": "Deepfake audio model unavailable: Request failed with status code 410",
+        "candidates": []
+      },
+      "deepfakeImage": {
+        "detector": "deepfakeImage",
+        "model": "prithivMLmods/Deep-Fake-Detector-v2-Model",
+        "source": "model_error",
+        "threatType": "Unknown",
+        "isSuspicious": false,
+        "riskScore": 0,
+        "confidence": 0,
+        "label": "unavailable",
+        "explanation": "Deepfake image model unavailable: Request failed with status code 410",
+        "candidates": []
+      },
+      "maliciousUrl": {
+        "detector": "maliciousUrl",
+        "model": "r3ddkahili/final-complete-malicious-url-model",
+        "source": "local_model_fallback",
+        "threatType": "Phishing URL",
+        "isSuspicious": true,
+        "riskScore": 84,
+        "confidence": 0.84,
+        "label": "Phishing URL",
+        "explanation": "Used local URL model fallback. SentinEL Model Assessment P(phishing)=0.84. Forensic feature 'Length' = 49.00. Forensic feature 'Digits' = 0.00. Forensic feature 'Entropy' = 4.34.",
+        "candidates": []
+      }
+    },
+    "primaryThreatType": "Phishing URL",
+    "overallRiskScore": 84,
+    "riskLevel": "HIGH",
+    "isSuspicious": true,
+    "summary": "promptInjection: None (36%) via heuristic_fallback | phishingMessaging: Phishing Message (42%) via heuristic_fallback | aiGeneratedContent: None (7%) via heuristic_fallback | anomalyLogs: None (29%) via heuristic_fallback | deepfakeAudio: Unknown (0%) via model_error | deepfakeImage: Unknown (0%) via model_error | maliciousUrl: Phishing URL (84%) via local_model_fallback"
+  }
+}

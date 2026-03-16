@@ -13,7 +13,6 @@ const {
 const execFileAsync = util.promisify(execFile);
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/gi;
-
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -38,6 +37,10 @@ function extractFirstUrl(text) {
 
 function safeToLower(value) {
   return String(value || "").toLowerCase();
+}
+
+function isZeroShotModel(modelId) {
+  return safeToLower(modelId).includes("bart-large-mnli");
 }
 
 function scoreFromClassifier(score, minIfPositive = 55, maxIfNegative = 30, isPositive = false) {
@@ -91,11 +94,16 @@ async function detectPhishingMessaging(text) {
   }
 
   try {
-    const prediction = await classifyText(MODEL_REGISTRY.phishingMessaging, normalized);
+    const prediction = await classifyText(
+      MODEL_REGISTRY.phishingMessaging,
+      normalized,
+      isZeroShotModel(MODEL_REGISTRY.phishingMessaging)
+        ? { candidate_labels: ["phishing message", "benign message"], multi_label: false }
+        : {}
+    );
     const label = safeToLower(prediction.label);
-    const isLabel1 = label === "label_1"; // 1 is typically malicious in this model
     const positive =
-      isLabel1 ||
+      label.includes("phishing") ||
       label.includes("phish") ||
       label.includes("spam") ||
       label.includes("fraud") ||
@@ -182,7 +190,21 @@ async function detectMaliciousUrl(urlInput) {
   }
 
   try {
-    const prediction = await classifyText(MODEL_REGISTRY.maliciousUrl, normalizedUrl);
+    const prediction = await classifyText(
+      MODEL_REGISTRY.maliciousUrl,
+      normalizedUrl,
+      isZeroShotModel(MODEL_REGISTRY.maliciousUrl)
+        ? {
+            candidate_labels: [
+              "phishing url",
+              "malware url",
+              "defacement url",
+              "benign url"
+            ],
+            multi_label: false
+          }
+        : {}
+    );
     const label = safeToLower(prediction.label);
     let threatType = "None";
     let riskScore = 20;
@@ -337,9 +359,16 @@ async function detectAnomalousLog(logText) {
   }
 
   try {
-    const prediction = await classifyText(MODEL_REGISTRY.anomalyLogs, normalized);
+    const prediction = await classifyText(
+      MODEL_REGISTRY.anomalyLogs,
+      normalized,
+      isZeroShotModel(MODEL_REGISTRY.anomalyLogs)
+        ? { candidate_labels: ["anomalous log", "benign log"], multi_label: false }
+        : {}
+    );
     const label = safeToLower(prediction.label);
     const positive =
+      label.includes("anomal") ||
       label === "label_1" ||
       label.includes("anomaly") ||
       label.includes("attack") ||

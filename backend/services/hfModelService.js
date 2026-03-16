@@ -4,9 +4,11 @@ const path = require("path");
 const { spawn } = require("child_process");
 
 const HF_API_BASE_URL =
-  process.env.HF_API_BASE_URL || "https://api-inference.huggingface.co/models";
-const HF_TIMEOUT_MS = Number(process.env.HF_TIMEOUT_MS || 30000);
-const HF_INFERENCE_MODE = String(process.env.HF_INFERENCE_MODE || "local").toLowerCase();
+  process.env.HF_API_BASE_URL || "https://router.huggingface.co/hf-inference/models";
+const HF_TIMEOUT_MS = Math.max(Number(process.env.HF_TIMEOUT_MS || 60000), 60000);
+const HF_INFERENCE_MODE = String(process.env.HF_INFERENCE_MODE || "api").toLowerCase();
+const HF_API_RETRIES = Number(process.env.HF_API_RETRIES || 2);
+const HF_RETRY_DELAY_MS = Number(process.env.HF_RETRY_DELAY_MS || 2500);
 const PYTHON_BIN = process.env.PYTHON_BIN || "python";
 const LOCAL_INFER_SCRIPT = path.join(__dirname, "..", "..", "ML", "hf_local", "infer.py");
 const LOCAL_MODELS_DIR = path.join(__dirname, "..", "..", "ML", "hf_local", "models");
@@ -16,22 +18,22 @@ const LOCAL_LOCK_FILE = path.join(__dirname, "..", "..", "ML", "hf_local", "mode
 const MODEL_REGISTRY = {
   phishingMessaging:
     process.env.HF_MODEL_PHISHING_MESSAGING ||
-    "aamoshdahal/email-phishing-distilbert-finetuned",
+    "facebook/bart-large-mnli",
   maliciousUrl:
     process.env.HF_MODEL_MALICIOUS_URL ||
-    "r3ddkahili/final-complete-malicious-url-model",
+    "facebook/bart-large-mnli",
   deepfakeImage:
     process.env.HF_MODEL_DEEPFAKE_IMAGE ||
     "prithivMLmods/Deep-Fake-Detector-v2-Model",
   deepfakeAudio:
     process.env.HF_MODEL_DEEPFAKE_AUDIO ||
-    "mo-thecreator/Deepfake-audio-detection",
+    "openai/whisper-large-v3",
   promptInjection:
     process.env.HF_MODEL_PROMPT_INJECTION ||
     "protectai/deberta-v3-base-prompt-injection",
   anomalyLogs:
     process.env.HF_MODEL_ANOMALY_LOGS ||
-    "ehsanaghaei/SecureBERT",
+    "facebook/bart-large-mnli",
   aiGeneratedText:
     process.env.HF_MODEL_AI_GENERATED_TEXT ||
     "openai-community/roberta-base-openai-detector"
@@ -76,6 +78,62 @@ function buildHeaders(contentType = "application/json") {
   }
 
   return headers;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function shouldRetryHfError(error) {
+  const status = error?.response?.status;
+  const data = error?.response?.data;
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(data?.error || error?.message || "").toLowerCase();
+
+  if (code === "ECONNABORTED" || message.includes("timeout")) {
+    return true;
+  }
+
+  if ([429, 500, 502, 503, 504].includes(status)) {
+    return true;
+  }
+
+  if (message.includes("loading") || message.includes("currently loading")) {
+    return true;
+  }
+
+  return false;
+}
+
+function getRetryDelayMs(error, fallbackDelayMs = HF_RETRY_DELAY_MS) {
+  const estimatedSeconds = Number(error?.response?.data?.estimated_time || 0);
+  if (estimatedSeconds > 0) {
+    return Math.max(Math.round(estimatedSeconds * 1000), fallbackDelayMs);
+  }
+  return fallbackDelayMs;
+}
+
+async function callWithHfRetry(requestFn) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= HF_API_RETRIES; attempt += 1) {
+    try {
+      return await requestFn();
+    } catch (error) {
+      lastError = error;
+      const retryable = shouldRetryHfError(error);
+      const hasNextAttempt = attempt < HF_API_RETRIES;
+
+      if (!retryable || !hasNextAttempt) {
+        throw error;
+      }
+
+      const delayMs = getRetryDelayMs(error);
+      await sleep(delayMs);
+    }
+  }
+
+  throw lastError;
 }
 
 function getLocalModelPath(modelId) {
@@ -200,18 +258,22 @@ function unwrapCandidates(rawData) {
 }
 
 async function postJsonModel(modelId, payload) {
-  const response = await axios.post(buildUrl(modelId), payload, {
-    headers: buildHeaders("application/json"),
-    timeout: HF_TIMEOUT_MS
-  });
+  const response = await callWithHfRetry(() =>
+    axios.post(buildUrl(modelId), payload, {
+      headers: buildHeaders("application/json"),
+      timeout: HF_TIMEOUT_MS
+    })
+  );
   return response.data;
 }
 
 async function postBinaryModel(modelId, content, contentType) {
-  const response = await axios.post(buildUrl(modelId), content, {
-    headers: buildHeaders(contentType || "application/octet-stream"),
-    timeout: HF_TIMEOUT_MS
-  });
+  const response = await callWithHfRetry(() =>
+    axios.post(buildUrl(modelId), content, {
+      headers: buildHeaders(contentType || "application/octet-stream"),
+      timeout: HF_TIMEOUT_MS
+    })
+  );
   return response.data;
 }
 

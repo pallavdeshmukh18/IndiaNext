@@ -1,0 +1,73 @@
+{
+  "runtime": {
+    "mode": "api",
+    "configuredMode": "api",
+    "hfTokenConfigured": true
+  },
+  "models": {
+    "phishingMessaging": "facebook/bart-large-mnli",
+    "maliciousUrl": "facebook/bart-large-mnli",
+    "deepfakeImage": "prithivMLmods/Deep-Fake-Detector-v2-Model",
+    "deepfakeAudio": "openai/whisper-large-v3",
+    "promptInjection": "protectai/deberta-v3-base-prompt-injection",
+    "anomalyLogs": "facebook/bart-large-mnli",
+    "aiGeneratedText": "openai-community/roberta-base-openai-detector"
+  },
+  "results": [
+    {
+      "id": "phishingText",
+      "ok": true,
+      "ms": 566,
+      "label": "phishing message",
+      "score": 0.8993504643440247
+    },
+    {
+      "id": "maliciousUrl",
+      "ok": false,
+      "ms": 275048,
+      "code": "ECONNABORTED",
+      "status": null,
+      "error": "timeout of 90000ms exceeded"
+    },
+    {
+      "id": "promptInjection",
+      "ok": true,
+      "ms": 4310,
+      "label": "INJECTION",
+      "score": 0.9999994039535522
+    },
+    {
+      "id": "anomalyLogs",
+      "ok": true,
+      "ms": 497,
+      "label": "anomalous log",
+      "score": 0.9832698106765747
+    },
+    {
+      "id": "aiGeneratedText",
+      "ok": true,
+      "ms": 8664,
+      "label": "Fake",
+      "score": 0.5151047706604004
+    },
+    {
+      "id": "deepfakeImage",
+      "ok": true,
+      "ms": 5335,
+      "label": "Deepfake",
+      "score": 0.6711592078208923
+    },
+    {
+      "id": "deepfakeAudio",
+      "ok": true,
+      "ms": 3467,
+      "label": "unknown",
+      "score": 0
+    }
+  ],
+  "summary": {
+    "total": 7,
+    "passed": 6,
+    "failed": 1
+  }
+}
