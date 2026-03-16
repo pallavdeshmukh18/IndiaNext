@@ -44,6 +44,7 @@ router.get("/", async (req, res) => {
           scamProbability: mlResult.scam_probability,
           label: mlResult.label,
           explanation: mlResult.explanation,
+          aiGeneratedAnalysis: mlResult.aiGeneratedAnalysis || null,
         });
 
         return {
@@ -58,6 +59,7 @@ router.get("/", async (req, res) => {
           scamProbability: scanRecord.scamProbability,
           label: scanRecord.label,
           explanation: scanRecord.explanation,
+          aiGeneratedAnalysis: scanRecord.aiGeneratedAnalysis || mlResult.aiGeneratedAnalysis || null,
           explainability: mlResult.explainability || null,
           createdAt: scanRecord.createdAt,
         };

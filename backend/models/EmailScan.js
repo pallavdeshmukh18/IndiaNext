@@ -50,6 +50,10 @@ const emailScanSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    aiGeneratedAnalysis: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
   },
   {
     timestamps: {

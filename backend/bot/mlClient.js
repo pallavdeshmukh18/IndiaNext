@@ -85,6 +85,7 @@ const analyzeViaLocalSuite = async (service, payload) => {
       explanation: Array.isArray(emailResult.explanation) && emailResult.explanation.length > 0
         ? `Top indicators: ${emailResult.explanation.join(", ")}`
         : "Email model completed without additional explanation.",
+      ai_generated_analysis: emailResult.aiGeneratedAnalysis || null,
     };
   }
 
