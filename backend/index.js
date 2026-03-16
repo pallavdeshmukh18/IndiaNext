@@ -21,6 +21,22 @@ app.use("/api/threats", threatRoutes);
 app.use("/api", historyRoutes);
 app.use("/api", analyticsRoutes);
 app.use("/api", alertRoutes);
+
+const twilio = require("twilio");
+
+app.post("/whatsapp", express.urlencoded({ extended: false }), (req, res) => {
+
+    console.log("BODY RECEIVED:", req.body);
+
+    const msg = req.body.Body;
+
+    const twiml = new twilio.twiml.MessagingResponse();
+    twiml.message("🤖 Scam scanner received: " + msg);
+
+    res.type("text/xml");
+    res.send(twiml.toString());
+});
+
 // MongoDB connection
 mongoose
     .connect(process.env.MONGO_URI)

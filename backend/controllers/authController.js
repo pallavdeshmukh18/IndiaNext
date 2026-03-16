@@ -1,10 +1,13 @@
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
+const { verifyGoogleIdToken } = require("../utils/verifyGoogleToken");
 
 const buildAuthResponse = (user) => ({
     userId: user._id,
     name: user.name,
     email: user.email,
+    authProvider: user.authProvider,
+    avatar: user.avatar || "",
     token: generateToken(user._id)
 });
 
@@ -68,7 +71,64 @@ const loginUser = async (req, res) => {
     }
 };
 
+const googleAuth = async (req, res) => {
+    try {
+        const { idToken } = req.body;
+
+        if (!idToken) {
+            return res.status(400).json({
+                error: "Google ID token is required"
+            });
+        }
+
+        const payload = await verifyGoogleIdToken(idToken);
+
+        if (!payload.email) {
+            return res.status(400).json({
+                error: "Google account email is required"
+            });
+        }
+
+        let user = null;
+
+        if (payload.sub) {
+            user = await User.findOne({ googleId: payload.sub });
+        }
+
+        if (!user) {
+            user = await User.findOne({ email: payload.email.toLowerCase() });
+        }
+
+        if (!user) {
+            user = await User.create({
+                name: payload.name || payload.email.split("@")[0],
+                email: payload.email,
+                googleId: payload.sub,
+                authProvider: "google",
+                avatar: payload.picture || ""
+            });
+        } else {
+            user.name = payload.name || user.name;
+            user.googleId = payload.sub || user.googleId;
+            user.authProvider = "google";
+            user.avatar = payload.picture || user.avatar;
+            await user.save();
+        }
+
+        res.json(buildAuthResponse(user));
+    } catch (error) {
+        const statusCode = error.message === "GOOGLE_OAUTH_NOT_CONFIGURED" ? 500 : 401;
+
+        res.status(statusCode).json({
+            error: statusCode === 500
+                ? "Google OAuth is not configured"
+                : "Invalid Google token"
+        });
+    }
+};
+
 module.exports = {
     registerUser,
-    loginUser
+    loginUser,
+    googleAuth
 };

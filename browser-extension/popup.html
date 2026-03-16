@@ -16,9 +16,15 @@
       <label class="field-label" for="backendUrl">Backend URL</label>
       <input id="backendUrl" class="input" type="url" value="http://localhost:8000" />
 
-      <button id="analyzeBtn" class="btn-primary">Capture and Analyze</button>
+      <button id="analyzeBtn" class="btn-primary">Scan Current Screen</button>
+
+      <label class="toggle-row" for="liveModeToggle">
+        <input id="liveModeToggle" type="checkbox" />
+        <span>Live monitor (every 8s)</span>
+      </label>
 
       <p id="statusText" class="status-text">Ready to analyze.</p>
+      <p id="lastAnalyzed" class="meta-text hidden"></p>
 
       <section id="previewCard" class="preview-card hidden" aria-live="polite">
         <img id="screenshotPreview" alt="Captured screenshot" />
