@@ -78,10 +78,29 @@ body {
   transform: none;
 }
 
+.toggle-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #c7c9d1;
+}
+
+.toggle-row input {
+  accent-color: #fb7185;
+}
+
 .status-text {
   margin: 10px 0;
   font-size: 12px;
   color: #aeb2bc;
+}
+
+.meta-text {
+  margin: -4px 0 10px;
+  font-size: 11px;
+  color: #9297a4;
 }
 
 .preview-card {
