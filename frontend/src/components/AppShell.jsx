@@ -6,6 +6,7 @@ import {
   ChevronRight,
   LayoutDashboard,
   LogOut,
+  Mail,
   ShieldAlert,
   Sparkles,
   History as HistoryIcon
@@ -24,6 +25,12 @@ const navItems = [
     label: 'Analyze',
     caption: 'Scan suspicious content',
     icon: Activity
+  },
+  {
+    to: '/app/inbox',
+    label: 'Inbox',
+    caption: 'Scanned email queue',
+    icon: Mail
   },
   {
     to: '/app/history',
@@ -51,6 +58,12 @@ const pageMeta = {
     title: 'Run threat analysis',
     description: 'Submit suspicious text, URLs, prompts, or OCR snippets and get an explainable verdict.',
     breadcrumb: 'Analysis'
+  },
+  '/app/inbox': {
+    eyebrow: 'INBOX',
+    title: 'Protected Inbox',
+    description: 'Review scanned communications alongside their real-time threat verdicts.',
+    breadcrumb: 'Inbox'
   },
   '/app/history': {
     eyebrow: 'ARCHIVE',
@@ -95,7 +108,8 @@ const AppShell = ({ session, onLogout }) => {
         </Link>
 
         <nav className="workspace-nav">
-          {navItems.map(({ to, label, caption, icon: Icon }) => (
+          <div className="workspace-nav-section-title">MENU</div>
+          {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -108,65 +122,46 @@ const AppShell = ({ session, onLogout }) => {
               </span>
               <span className="workspace-nav-copy">
                 <strong>{label}</strong>
-                <small>{caption}</small>
               </span>
             </NavLink>
           ))}
         </nav>
-
-        <div className="workspace-sidebar-card">
-          <div className="workspace-sidebar-label">Signed in</div>
-          <div className="workspace-analyst-row">
-            <div className="workspace-avatar">{getInitials(session)}</div>
-            <div className="workspace-analyst-copy">
-              <strong>{session?.name || 'Security Analyst'}</strong>
-              <span>{session?.email}</span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="workspace-btn workspace-btn-secondary workspace-logout"
-            onClick={onLogout}
-          >
-            <LogOut size={16} />
-            Sign out
-          </button>
-        </div>
       </aside>
 
       <div className="workspace-main">
-        <header className="workspace-topbar">
-          <div className="workspace-topbar-copy">
-            <div className="section-label">
-              <span className="section-label-dot"></span>
-              {currentMeta.eyebrow}
-            </div>
-            <h1>{currentMeta.title}</h1>
-            <p>{currentMeta.description}</p>
+        <header className="workspace-header">
+          <div className="workspace-header-breadcrumb">
+            <Link to="/app/dashboard" className="breadcrumb-nav-link">
+              <div className="breadcrumb-home-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </div>
+            </Link>
+            <ChevronRight size={14} className="breadcrumb-separator" />
+            <Link to="/app/dashboard" className="breadcrumb-nav-link">Dashboard</Link>
+            <ChevronRight size={14} className="breadcrumb-separator" />
+            <Link to={location.pathname} className="breadcrumb-current breadcrumb-nav-link">{currentMeta.breadcrumb}</Link>
           </div>
 
-          <div className="workspace-topbar-actions">
-            <Link to="/app/analyze" className="workspace-btn workspace-btn-primary">
-              <Activity size={16} />
-              New scan
+          <div className="workspace-header-actions">
+            <Link to="/app/alerts" className="workspace-header-icon-btn">
+              <BellRing size={18} />
+              <span className="workspace-header-badge"></span>
             </Link>
-            <Link to="/app/alerts" className="workspace-btn workspace-btn-secondary">
-              <BellRing size={16} />
-              Review alerts
-            </Link>
+            
+            <div className="workspace-user-dropdown">
+              <div className="workspace-avatar-small">{getInitials(session)}</div>
+              <span>{session?.name?.split(' ')[0] || 'Analyst'}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            
+            <button className="workspace-header-icon-btn workspace-logout-icon" onClick={onLogout} title="Sign Out">
+              <LogOut size={16} />
+            </button>
           </div>
         </header>
-
-        <div className="workspace-crumb glass-panel">
-          <span>Workspace</span>
-          <ChevronRight size={14} />
-          <span>{currentMeta.breadcrumb}</span>
-          <div className="workspace-crumb-status">
-            <Sparkles size={14} />
-            Signed in session
-          </div>
-        </div>
 
         <main className="workspace-content">
           <Outlet />

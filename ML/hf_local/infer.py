@@ -18,7 +18,6 @@ import base64
 import tempfile
 from pathlib import Path
 
-import librosa
 import requests
 from PIL import Image
 from transformers import pipeline
@@ -137,6 +136,8 @@ def _infer_image_to_text(model: str, source: str):
 
 
 def _infer_audio(model: str, source: str):
+    import librosa
+
     clf = pipeline(
         task="audio-classification",
         model=model
