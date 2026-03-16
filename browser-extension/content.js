@@ -45,17 +45,28 @@ observer.observe(document.documentElement || document.body, {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!message || message.type !== "GET_SCREEN_SIGNALS") {
+  if (!message) {
     return;
   }
 
-  try {
-    const signals = collectPageSignals();
-    sendResponse({ ok: true, signals });
-  } catch (error) {
-    sendResponse({
-      ok: false,
-      error: error && error.message ? error.message : "Could not read screen signals."
-    });
+  if (message.type === "GET_SCREEN_SIGNALS") {
+    try {
+      const signals = collectPageSignals();
+      sendResponse({ ok: true, signals });
+    } catch (error) {
+      sendResponse({
+        ok: false,
+        error: error && error.message ? error.message : "Could not read screen signals."
+      });
+    }
+    return;
+  }
+
+  if (message.type === "VIDEO_ANALYSIS_RESULT") {
+    if (message.ok) {
+      alert(message.message || "Video analysis completed.");
+    } else {
+      alert(`Video analysis failed: ${message.error || "Unknown error."}`);
+    }
   }
 });

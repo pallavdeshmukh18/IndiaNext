@@ -42,6 +42,7 @@ Optional model overrides are supported via env vars:
 - `HF_MODEL_MALICIOUS_URL`
 - `HF_MODEL_DEEPFAKE_IMAGE`
 - `HF_MODEL_DEEPFAKE_AUDIO`
+- `HF_MODEL_DEEPFAKE_VIDEO`
 - `HF_MODEL_PROMPT_INJECTION`
 - `HF_MODEL_ANOMALY_LOGS`
 - `HF_MODEL_AI_GENERATED_TEXT`
@@ -92,6 +93,19 @@ python ML/hf_local/setup_models.py --offline
 ## Endpoint
 
 `POST /api/threats/suite-analyze`
+
+`POST /api/threats/video-ai-likelihood`
+
+Video endpoint request body:
+
+```json
+{
+  "videoUrl": "https://example.com/video.mp4",
+  "pageUrl": "https://example.com/watch"
+}
+```
+
+You can send `videoBase64` instead of `videoUrl`.
 
 Request body (all fields optional, but at least one required):
 

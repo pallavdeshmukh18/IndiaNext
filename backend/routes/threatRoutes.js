@@ -5,7 +5,8 @@ const {
     analyzeThreat,
     quickAnalyzeThreat,
     analyzeSecuritySuite,
-    analyzeLiveScreenThreat
+    analyzeLiveScreenThreat,
+    analyzeVideoThreat
 } = require('../controllers/threatController');
 
 const upload = multer({
@@ -56,5 +57,8 @@ router.post('/suite-analyze', parseSuiteUpload, analyzeSecuritySuite);
 
 // POST /api/threats/live-screen-analyze
 router.post('/live-screen-analyze', analyzeLiveScreenThreat);
+
+// POST /api/threats/video-ai-likelihood
+router.post('/video-ai-likelihood', analyzeVideoThreat);
 
 module.exports = router;

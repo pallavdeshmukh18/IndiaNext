@@ -3,6 +3,7 @@ const { getRecommendation } = require('../services/recommendationService');
 const { saveScanResult } = require('../services/logService');
 const { runSecuritySuiteScan } = require('../services/securitySuiteService');
 const { analyzeLiveScreen } = require('../services/liveScreenAnalysisService');
+const { analyzeVideoAiLikelihood } = require('../services/videoAnalysisService');
 
 const FALLBACK_USER_ID = "000000000000000000000000";
 
@@ -253,9 +254,35 @@ const analyzeLiveScreenThreat = async (req, res) => {
     }
 };
 
+const analyzeVideoThreat = async (req, res) => {
+    try {
+        const { videoUrl, videoBase64, pageUrl } = req.body || {};
+
+        if (!videoUrl && !videoBase64) {
+            return res.status(400).json({
+                error: "videoUrl or videoBase64 is required for video analysis."
+            });
+        }
+
+        const analysisOutput = await analyzeVideoAiLikelihood({
+            videoUrl,
+            videoBase64,
+            pageUrl
+        });
+
+        return res.json(analysisOutput);
+    } catch (error) {
+        console.error("Error in video AI-likelihood analysis:", error);
+        return res.status(500).json({
+            error: error?.message || "Internal server error during video analysis."
+        });
+    }
+};
+
 module.exports = {
     analyzeThreat,
     quickAnalyzeThreat,
     analyzeSecuritySuite,
-    analyzeLiveScreenThreat
+    analyzeLiveScreenThreat,
+    analyzeVideoThreat
 };

@@ -28,6 +28,9 @@ const MODEL_REGISTRY = {
   deepfakeAudio:
     process.env.HF_MODEL_DEEPFAKE_AUDIO ||
     "openai/whisper-large-v3",
+  deepfakeVideo:
+    process.env.HF_MODEL_DEEPFAKE_VIDEO ||
+    "MCG-NJU/videomae-base-finetuned-kinetics",
   promptInjection:
     process.env.HF_MODEL_PROMPT_INJECTION ||
     "protectai/deberta-v3-base-prompt-injection",
@@ -508,9 +511,15 @@ async function classifyMedia(modelId, mediaInput, fallbackContentType) {
 
   if (shouldUseLocalInference()) {
     const source = resolveLocalSource(mediaInput);
-    const inputType = String(fallbackContentType || "").startsWith("audio/")
-      ? "audio"
-      : "image";
+    const contentType = String(fallbackContentType || "").toLowerCase();
+    let inputType = "image";
+
+    if (contentType.startsWith("audio/")) {
+      inputType = "audio";
+    } else if (contentType.startsWith("video/")) {
+      inputType = "video";
+    }
+
     raw = await runLocalInference({
       model: resolvedModelId,
       inputType,
