@@ -7,6 +7,9 @@
     "default_popup": "popup.html",
     "default_title": "Threat Lens"
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "permissions": [
     "activeTab",
     "tabs",
@@ -14,8 +17,7 @@
     "storage"
   ],
   "host_permissions": [
-    "http://localhost:8000/*",
-    "http://127.0.0.1:8000/*"
+    "<all_urls>"
   ],
   "content_scripts": [
     {
@@ -23,6 +25,7 @@
         "<all_urls>"
       ],
       "js": [
+        "utils/domExtractor.js",
         "content.js"
       ],
       "run_at": "document_idle"

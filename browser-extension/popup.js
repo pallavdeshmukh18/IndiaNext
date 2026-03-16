@@ -1,6 +1,7 @@
 const DEFAULT_BACKEND_URL = "http://localhost:8000";
 const LIVE_SCREEN_ANALYZE_PATH = "/api/threats/live-screen-analyze";
 const LIVE_SCAN_INTERVAL_MS = 8000;
+const REQUEST_TIMEOUT_MS = 10000;
 
 const backendUrlInput = document.getElementById("backendUrl");
 const analyzeBtn = document.getElementById("analyzeBtn");
@@ -88,12 +89,12 @@ async function runAnalysis(options = {}) {
       throw new Error(data.error || "Analysis failed.");
     }
 
-    renderResult(data);
-    updateLastAnalyzed(pageSignals.capturedAt || new Date().toISOString());
-    setBusyState(false, "Screen analyzed.");
+    renderResult(pageSignals, data);
+    updateLastAnalyzed(new Date().toISOString());
+    setBusyState(false, "Page signals sent to backend.");
   } catch (error) {
     showError(error.message || "Unexpected error while analyzing page.");
-    setBusyState(false, "Unable to analyze current screen.");
+    setBusyState(false, "Unable to send page signals.");
   } finally {
     isAnalyzing = false;
   }
@@ -126,8 +127,30 @@ function stopLiveMonitoring() {
   }
 }
 
-function renderResult(data) {
-  const score = clampNumber(Number(data.riskScore || 0), 0, 100);
+function renderResult(pageSignals, backendData) {
+  const backendScore = Number(
+    backendData.riskScore ??
+      backendData.risk_score ??
+      backendData.overallRiskScore ??
+      0
+  );
+  const score = clampNumber(backendScore, 0, 100);
+  const derivedThreatType =
+    backendData.threatType ||
+    backendData.label ||
+    (pageSignals.hasLoginForm ? "Login Surface Detected" : "No Immediate Login Signals");
+  const derivedExplanation =
+    backendData.explanation ||
+    backendData.summary ||
+    [
+      `Domain: ${pageSignals.domain || "unknown"}`,
+      `Forms detected: ${pageSignals.forms.length}`,
+      `Password field present: ${pageSignals.hasPasswordField ? "Yes" : "No"}`,
+      `Login form heuristic: ${pageSignals.hasLoginForm ? "Triggered" : "Not triggered"}`
+    ].join(" | ");
+  const derivedRecommendation =
+    backendData.recommendation ||
+    "DOM signals have been forwarded to Scamurai backend. // TODO: call phishing ML service";
 
   let badgeText = "SAFE";
   let badgeClass = "safe";
@@ -169,22 +192,6 @@ function renderResult(data) {
   }
 
   resultCard.classList.remove("hidden");
-}
-
-function buildInputPayload(pageSignals) {
-  return [
-    `URL: ${pageSignals.url || ""}`,
-    `Title: ${pageSignals.title || ""}`,
-    `MetaDescription: ${pageSignals.metaDescription || ""}`,
-    `FormCount: ${pageSignals.forms || 0}`,
-    `PasswordFieldCount: ${pageSignals.passwordFields || 0}`,
-    `LinkCount: ${pageSignals.linkCount || 0}`,
-    `ExternalLinkCount: ${pageSignals.externalLinkCount || 0}`,
-    `SuspiciousLinkCount: ${pageSignals.suspiciousLinkCount || 0}`,
-    `SuspiciousKeywordHits: ${pageSignals.suspiciousKeywordHits || 0}`,
-    "VisibleText:",
-    pageSignals.visibleText || ""
-  ].join("\n");
 }
 
 async function extractPageSignals(tabId) {
@@ -243,76 +250,32 @@ async function requestSignalsViaScriptInjection(tabId) {
 }
 
 function collectPageSignalsInPageContext() {
-  const normalizeText = (value) => (value || "").replace(/\s+/g, " ").trim();
-
-  const pageText = normalizeText(document.body ? document.body.innerText : "");
-  const metaDescriptionTag = document.querySelector("meta[name='description']");
-
-  const anchors = Array.from(document.querySelectorAll("a[href]"));
-  const currentHost = window.location.hostname.replace(/^www\./i, "");
-
-  let linkCount = 0;
-  let externalLinkCount = 0;
-  let suspiciousLinkCount = 0;
-
-  const suspiciousHrefPattern = /(bit\.ly|tinyurl|@|%40|verify|login|secure|update|account)/i;
-
-  for (const anchor of anchors) {
-    const href = anchor.getAttribute("href");
-    if (!href) continue;
-
-    try {
-      const parsed = new URL(href, window.location.href);
-      if (!/^https?:$/i.test(parsed.protocol)) continue;
-
-      linkCount += 1;
-
-      const targetHost = parsed.hostname.replace(/^www\./i, "");
-      if (targetHost && currentHost && targetHost !== currentHost) {
-        externalLinkCount += 1;
-      }
-
-      if (suspiciousHrefPattern.test(parsed.href)) {
-        suspiciousLinkCount += 1;
-      }
-    } catch (error) {
-      // Ignore malformed links and continue parsing the page.
-    }
-  }
-
-  const forms = document.querySelectorAll("form").length;
-  const passwordFields = document.querySelectorAll("input[type='password']").length;
-
-  const suspiciousKeywords = [
-    "urgent",
-    "verify your account",
-    "account suspended",
-    "password",
-    "bank",
-    "security alert",
-    "login",
-    "click here",
-    "update account"
-  ];
-
-  const loweredContext = `${document.title || ""} ${pageText}`.toLowerCase();
-  let suspiciousKeywordHits = 0;
-  for (const keyword of suspiciousKeywords) {
-    if (loweredContext.includes(keyword)) suspiciousKeywordHits += 1;
-  }
+  const normalizeText = (value) =>
+    typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+  const pageText = normalizeText(document.body?.innerText || "").slice(0, 5000);
+  const forms = Array.from(document.querySelectorAll("form")).map((formElement) => ({
+    action: normalizeText(formElement.getAttribute("action")) || window.location.href,
+    method: (normalizeText(formElement.getAttribute("method")) || "get").toLowerCase(),
+    inputs: Array.from(formElement.querySelectorAll("input, select, textarea")).map((field) => ({
+      type: normalizeText(field.getAttribute("type")) || field.tagName.toLowerCase(),
+      name: normalizeText(field.getAttribute("name")) || normalizeText(field.getAttribute("id"))
+    }))
+  }));
+  const hasPasswordField = Boolean(document.querySelector("input[type='password']"));
+  const hasLoginForm =
+    hasPasswordField ||
+    ["login", "signin", "account", "password", "verify"].some((keyword) =>
+      pageText.toLowerCase().includes(keyword)
+    );
 
   return {
     url: window.location.href,
+    domain: window.location.hostname,
     title: document.title || "",
-    metaDescription: normalizeText(metaDescriptionTag ? metaDescriptionTag.content : ""),
     forms,
-    passwordFields,
-    linkCount,
-    externalLinkCount,
-    suspiciousLinkCount,
-    suspiciousKeywordHits,
-    visibleText: pageText.slice(0, 6000),
-    capturedAt: new Date().toISOString()
+    hasPasswordField,
+    hasLoginForm,
+    pageText
   };
 }
 
@@ -417,6 +380,26 @@ async function safeReadJson(response) {
     return await response.json();
   } catch (error) {
     return {};
+  }
+}
+
+async function fetchWithTimeout(url, options) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("Backend request timed out.");
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
