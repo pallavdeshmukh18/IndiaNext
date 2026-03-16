@@ -1,6 +1,7 @@
 import pandas as pd
 import pickle
 import time
+import re
 from pathlib import Path
 import shap
 
@@ -30,7 +31,7 @@ y = df["label"]
 
 vectorizer = TfidfVectorizer(
     stop_words="english",
-    ngram_range=(1, 2),
+    ngram_range=(1,2),
     max_features=20000
 )
 
@@ -48,7 +49,10 @@ X_train, X_test, y_train, y_test = train_test_split(
     stratify=y
 )
 
-# Random Forest optimization
+# ----------------------------
+# Random Forest Optimization
+# ----------------------------
+
 rf_train_size = min(20000, X_train.shape[0])
 
 if rf_train_size < X_train.shape[0]:
@@ -64,7 +68,7 @@ else:
 X_train_rf_sparse = X_train[rf_indices]
 y_train_rf = y_train.iloc[rf_indices]
 
-svd_components = min(300, X_train_rf_sparse.shape[1] - 1)
+svd_components = min(300, X_train_rf_sparse.shape[1]-1)
 
 svd = TruncatedSVD(
     n_components=svd_components,
@@ -79,6 +83,7 @@ X_test_rf = svd.transform(X_test)
 # ----------------------------
 
 models = {
+
     "Naive Bayes": {
         "model": MultinomialNB(),
         "train_X": X_train,
@@ -118,11 +123,11 @@ for name, config in models.items():
     test_X = config["test_X"]
 
     print(f"\nTraining {name}...")
-    start_time = time.time()
+    start = time.time()
 
-    model.fit(train_X, y_train if name != "Random Forest" else y_train_rf)
+    model.fit(train_X, y_train if name!="Random Forest" else y_train_rf)
 
-    print(f"{name} training completed in {time.time() - start_time:.2f} seconds.")
+    print(f"{name} training completed in {time.time()-start:.2f} seconds.")
 
     y_pred = model.predict(test_X)
 
@@ -139,23 +144,23 @@ for name, config in models.items():
 
     trained_models[name] = model
 
-    print(f"\n{name} Classification Report:\n")
+    print("\nClassification Report\n")
     print(classification_report(y_test, y_pred))
 
 # ----------------------------
 # 6. Model Comparison
 # ----------------------------
 
-print("\nModel Comparison Results:\n")
+print("\nModel Comparison Results\n")
 
 for name, metrics in results.items():
 
     print(
         f"{name}: "
-        f"Accuracy={metrics['accuracy']:.4f}, "
-        f"Precision={metrics['precision']:.4f}, "
-        f"Recall={metrics['recall']:.4f}, "
-        f"F1-Score={metrics['f1-score']:.4f}"
+        f"Accuracy={metrics['accuracy']:.4f} "
+        f"Precision={metrics['precision']:.4f} "
+        f"Recall={metrics['recall']:.4f} "
+        f"F1={metrics['f1-score']:.4f}"
     )
 
 # ----------------------------
@@ -171,8 +176,8 @@ print(f"\nBest performing model: {best_model_name}")
 # 8. Save Model
 # ----------------------------
 
-pickle.dump(best_model, open(BASE_DIR / "phishing_model.pkl", "wb"))
-pickle.dump(vectorizer, open(BASE_DIR / "vectorizer.pkl", "wb"))
+pickle.dump(best_model, open(BASE_DIR/"phishing_model.pkl","wb"))
+pickle.dump(vectorizer, open(BASE_DIR/"vectorizer.pkl","wb"))
 
 print("\nModel and vectorizer saved.")
 
@@ -195,7 +200,34 @@ else:
     explainer = shap.Explainer(best_model.predict_proba, background_data.toarray())
 
 # ----------------------------
-# 10. Highlight Function
+# Ignore Neutral Words
+# ----------------------------
+
+IGNORE_WORDS = {
+    "dear","hello","hi","thanks","thank",
+    "regards","please","user","sir","madam"
+}
+
+IGNORE_PHRASE_PREFIXES = {"dear", "hello", "hi"}
+
+
+def should_ignore_indicator(term):
+
+    tokens = term.split()
+
+    if not tokens:
+        return True
+
+    if all(token in IGNORE_WORDS for token in tokens):
+        return True
+
+    if tokens[0] in IGNORE_PHRASE_PREFIXES:
+        return True
+
+    return len(term.replace(" ", "")) <= 3
+
+# ----------------------------
+# Highlight Function
 # ----------------------------
 
 def highlight_suspicious_words(email_text, suspicious_words):
@@ -204,15 +236,17 @@ def highlight_suspicious_words(email_text, suspicious_words):
 
     for word in suspicious_words:
 
-        highlighted_text = highlighted_text.replace(
-            word,
-            f"**{word.upper()}**"
+        highlighted_text = re.sub(
+            r'\b' + re.escape(word) + r'\b',
+            f"**{word.upper()}**",
+            highlighted_text,
+            flags=re.IGNORECASE
         )
 
     return highlighted_text
 
 # ----------------------------
-# 11. Prediction Function
+# Prediction Function
 # ----------------------------
 
 def predict_email(email_text):
@@ -221,8 +255,6 @@ def predict_email(email_text):
     email_text = email_text.lower()
 
     email_vec = vectorizer.transform([email_text])
-
-    # probability score
 
     if best_model_name == "Random Forest":
 
@@ -234,7 +266,7 @@ def predict_email(email_text):
         email_features = email_vec
         score = best_model.predict_proba(email_features)[0][1]
 
-    # risk classification
+    # Risk levels
 
     if score < 0.3:
         risk = "LOW RISK"
@@ -245,7 +277,7 @@ def predict_email(email_text):
     else:
         risk = "HIGH RISK"
 
-    # explainability
+    # Explainability
 
     if best_model_name == "Random Forest":
 
@@ -263,25 +295,33 @@ def predict_email(email_text):
 
         if best_model_name == "Logistic Regression":
             values = shap_values.values[0]
-
         else:
-            values = shap_values.values[0, :, 1]
+            values = shap_values.values[0,:,1]
 
-        top_indices = values.argsort()[-5:][::-1]
+        sorted_indices = values.argsort()[::-1]
 
-        suspicious_words = [feature_names[i] for i in top_indices]
+        suspicious_words = []
 
-    # highlight suspicious words
+        for i in sorted_indices:
+
+            word = feature_names[i]
+
+            if not should_ignore_indicator(word):
+                suspicious_words.append(word)
+
+            if len(suspicious_words) == 5:
+                break
 
     highlighted_email = highlight_suspicious_words(
-        original_email.lower(),
+        original_email,
         suspicious_words
     )
 
     return score, risk, suspicious_words, highlighted_email
 
+
 # ----------------------------
-# 12. Test Example
+# Test Example
 # ----------------------------
 
 test_email = """
@@ -302,5 +342,5 @@ print("\nTop Suspicious Indicators:")
 for w in words:
     print("-", w)
 
-print("\nHighlighted Email:")
+print("\nHighlighted Email:\n")
 print(highlighted_email)
