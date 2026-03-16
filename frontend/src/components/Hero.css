@@ -22,21 +22,21 @@
 .badge-dot {
     width: 6px;
     height: 6px;
-    background-color: #a855f7;
+    background-color: #2492ff;
     border-radius: 50%;
-    box-shadow: 0 0 10px #a855f7;
+    box-shadow: 0 0 10px #2492ff;
     animation: badgePulse 2s infinite alternate;
 }
 
 @keyframes badgePulse {
     0% {
         opacity: 0.5;
-        box-shadow: 0 0 5px #a855f7;
+        box-shadow: 0 0 5px #2492ff;
     }
 
     100% {
         opacity: 1;
-        box-shadow: 0 0 15px #a855f7;
+        box-shadow: 0 0 15px #2492ff;
     }
 }
 

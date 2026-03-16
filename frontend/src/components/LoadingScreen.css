@@ -191,9 +191,9 @@
   font-weight: 700;
   color: #fff;
   text-shadow: 
-    0 0 10px #a855f7,
-    0 0 25px #a855f7,
-    0 0 50px rgba(168, 85, 247, 0.5);
+    0 0 10px #2492ff,
+    0 0 25px #2492ff,
+    0 0 50px rgba(36, 146, 255, 0.5);
 }
 
 @keyframes pulse-glow {
@@ -216,7 +216,7 @@
   position: absolute;
   width: 40vw;
   height: 40vw;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(36, 146, 255, 0.05) 0%, transparent 70%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);

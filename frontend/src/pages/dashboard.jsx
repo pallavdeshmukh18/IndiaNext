@@ -133,9 +133,6 @@ const Dashboard = ({ session }) => {
     <div className="workspace-page">
       <section className="workspace-page-hero">
         <div className="workspace-page-hero-copy">
-          <div className={`workspace-data-badge ${state.source}`}>
-            {state.source === 'live' ? 'Live API data' : 'Demo fallback data'}
-          </div>
           <h2>Your security posture at a glance</h2>
           <p>
             See total scan volume, high-risk cases, threat distribution, and recent activity in one focused view.
@@ -193,7 +190,11 @@ const Dashboard = ({ session }) => {
               ))}
             </div>
           ) : (
-            <div className="empty-state">No trend data is available yet. Run a scan to start building analyst telemetry.</div>
+            <div className="empty-state">
+              <Clock3 size={24} style={{ opacity: 0.4, marginBottom: '0.75rem' }} />
+              <strong>No trend data available</strong>
+              <p>Run a scan to start building analyst telemetry over time.</p>
+            </div>
           )}
         </article>
 
@@ -224,7 +225,11 @@ const Dashboard = ({ session }) => {
               })}
             </div>
           ) : (
-            <div className="empty-state">Threat type aggregation will appear after your first stored detections.</div>
+            <div className="empty-state">
+              <ShieldAlert size={24} style={{ opacity: 0.4, marginBottom: '0.75rem' }} />
+              <strong>No threat data</strong>
+              <p>Threat type aggregation will appear after your first stored detections.</p>
+            </div>
           )}
         </article>
       </section>
@@ -257,7 +262,11 @@ const Dashboard = ({ session }) => {
               ))}
             </div>
           ) : (
-            <div className="empty-state">No high-risk alerts are active right now.</div>
+            <div className="empty-state">
+              <ShieldCheck size={24} style={{ opacity: 0.4, marginBottom: '0.75rem', color: '#34c759' }} />
+              <strong>All clear</strong>
+              <p>No high-risk alerts are active in your queue right now.</p>
+            </div>
           )}
 
           <div className="workspace-panel-footer">
@@ -295,7 +304,11 @@ const Dashboard = ({ session }) => {
               ))}
             </div>
           ) : (
-            <div className="empty-state">No scan history is available yet. Start by submitting a threat for analysis.</div>
+            <div className="empty-state">
+              <Activity size={24} style={{ opacity: 0.4, marginBottom: '0.75rem' }} />
+              <strong>No history found</strong>
+              <p>Start by submitting a new threat for interactive analysis.</p>
+            </div>
           )}
 
           <div className="workspace-panel-footer">
