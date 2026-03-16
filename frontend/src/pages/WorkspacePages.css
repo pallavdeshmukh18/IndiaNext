@@ -1,0 +1,538 @@
+.workspace-page {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.workspace-page-hero,
+.workspace-panel,
+.workspace-metric-card,
+.history-card,
+.alert-card,
+.analysis-form-panel,
+.analysis-result-panel,
+.playbook-card {
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(14, 14, 18, 0.86), rgba(8, 8, 12, 0.94));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+.workspace-page-hero {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.workspace-page-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+}
+
+.workspace-page-hero-copy {
+  max-width: 46rem;
+}
+
+.workspace-page-hero-copy h2 {
+  font-size: clamp(1.5rem, 2vw, 2.2rem);
+  margin-bottom: 0.75rem;
+}
+
+.workspace-page-hero-copy p {
+  color: rgba(245, 245, 247, 0.74);
+  line-height: 1.65;
+}
+
+.workspace-page-hero-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.workspace-data-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  margin-bottom: 1rem;
+}
+
+.workspace-data-badge.live {
+  box-shadow: inset 0 0 0 1px rgba(146, 255, 197, 0.14);
+}
+
+.workspace-data-badge.mock {
+  box-shadow: inset 0 0 0 1px rgba(255, 196, 121, 0.12);
+}
+
+.workspace-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.workspace-metric-card {
+  padding: 1.25rem;
+}
+
+.workspace-metric-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.workspace-metric-value {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  letter-spacing: -0.06em;
+  margin-bottom: 0.35rem;
+}
+
+.workspace-metric-footnote {
+  color: rgba(245, 245, 247, 0.62);
+  font-size: 0.88rem;
+}
+
+.workspace-two-column,
+.analysis-layout,
+.alerts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.workspace-panel,
+.analysis-form-panel,
+.analysis-result-panel,
+.playbook-card {
+  padding: 1.35rem;
+}
+
+.workspace-panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.workspace-panel-header h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.35rem;
+}
+
+.workspace-panel-header p {
+  color: rgba(245, 245, 247, 0.68);
+  line-height: 1.55;
+}
+
+.workspace-inline-icon {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.trend-chart {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.trend-row {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.trend-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.86rem;
+  color: rgba(245, 245, 247, 0.68);
+}
+
+.trend-track,
+.type-meter,
+.analysis-meter-track {
+  width: 100%;
+  height: 0.72rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.trend-fill,
+.type-meter-fill,
+.analysis-meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(255, 154, 132, 0.96), rgba(102, 126, 234, 0.96));
+}
+
+.type-list,
+.scan-list,
+.alert-list,
+.analysis-list,
+.playbook-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.type-row,
+.scan-row,
+.alert-row,
+.analysis-list-item,
+.playbook-step {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.type-row-header,
+.scan-row-header,
+.alert-row-header,
+.history-card-header,
+.analysis-result-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.type-row strong,
+.scan-row strong,
+.alert-row strong,
+.history-card strong,
+.analysis-result-header strong {
+  font-size: 0.98rem;
+}
+
+.workspace-muted,
+.scan-row p,
+.alert-row p,
+.history-card p,
+.analysis-block p,
+.playbook-step p {
+  color: rgba(245, 245, 247, 0.64);
+  line-height: 1.55;
+}
+
+.workspace-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  color: rgba(245, 245, 247, 0.58);
+  font-size: 0.84rem;
+}
+
+.workspace-pill,
+.risk-pill,
+.analysis-indicator,
+.analysis-chip,
+.history-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.risk-pill.high {
+  color: #ffb8b0;
+  border-color: rgba(255, 115, 115, 0.24);
+  background: rgba(255, 92, 92, 0.12);
+}
+
+.risk-pill.medium {
+  color: #ffe09a;
+  border-color: rgba(255, 201, 90, 0.24);
+  background: rgba(255, 201, 90, 0.12);
+}
+
+.risk-pill.low {
+  color: #b5f0d2;
+  border-color: rgba(104, 211, 145, 0.24);
+  background: rgba(88, 201, 137, 0.12);
+}
+
+.workspace-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.analysis-channel-list,
+.analysis-chip-row,
+.history-toolbar,
+.history-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.analysis-channel-button,
+.history-select,
+.history-search,
+.analysis-textarea,
+.analysis-input,
+.analysis-submit,
+.alert-action-button,
+.playbook-action {
+  border-radius: 18px;
+  font-family: inherit;
+}
+
+.analysis-channel-button {
+  padding: 0.78rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.analysis-channel-button.active {
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, rgba(255, 154, 132, 0.12), rgba(102, 126, 234, 0.12));
+}
+
+.analysis-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.analysis-label,
+.history-label {
+  display: block;
+  margin-bottom: 0.55rem;
+  font-size: 0.9rem;
+  color: rgba(245, 245, 247, 0.72);
+}
+
+.analysis-textarea,
+.analysis-input,
+.history-search,
+.history-select {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+  padding: 0.95rem 1rem;
+}
+
+.analysis-textarea,
+.history-search {
+  min-height: 12rem;
+  resize: vertical;
+}
+
+.analysis-helper {
+  color: rgba(245, 245, 247, 0.56);
+  font-size: 0.84rem;
+}
+
+.analysis-submit-row,
+.alert-actions,
+.history-card-footer,
+.workspace-panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.analysis-submit,
+.alert-action-button,
+.playbook-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.05rem;
+  color: var(--text-dark);
+  background: var(--text-main);
+  font-weight: 600;
+}
+
+.analysis-submit:hover,
+.alert-action-button:hover,
+.playbook-action:hover {
+  transform: translateY(-1px);
+}
+
+.analysis-submit[disabled] {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+.analysis-result-header {
+  margin-bottom: 1rem;
+}
+
+.analysis-score-card {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 1rem;
+}
+
+.analysis-score-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.analysis-score-grid strong {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 1.15rem;
+}
+
+.analysis-block {
+  padding: 1rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.analysis-block h4 {
+  margin-bottom: 0.55rem;
+}
+
+.analysis-block strong,
+.analysis-list-item strong,
+.playbook-step strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.analysis-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.result-placeholder,
+.empty-state,
+.loading-state {
+  padding: 1.4rem;
+  border-radius: 22px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(245, 245, 247, 0.66);
+  line-height: 1.6;
+}
+
+.history-toolbar {
+  align-items: end;
+}
+
+.history-toolbar > * {
+  flex: 1 1 12rem;
+}
+
+.history-summary {
+  margin-top: 0.5rem;
+}
+
+.history-grid,
+.alert-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.history-card,
+.alert-card {
+  padding: 1.2rem;
+}
+
+.history-content-preview,
+.alert-content-preview {
+  margin-top: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.alert-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.playbook-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.playbook-step {
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 1200px) {
+  .workspace-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workspace-two-column,
+  .analysis-layout,
+  .alerts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace-page-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workspace-page-hero-actions {
+    justify-content: flex-start;
+  }
+
+  .workspace-metric-grid,
+  .analysis-score-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-panel,
+  .workspace-page-hero,
+  .history-card,
+  .alert-card,
+  .analysis-form-panel,
+  .analysis-result-panel,
+  .playbook-card {
+    border-radius: 22px;
+  }
+
+  .history-toolbar > * {
+    flex-basis: 100%;
+  }
+}

@@ -9,10 +9,10 @@ const Footer = () => {
                 <div className="footer-brand">
                     <div className="footer-logo">
                         <ShieldAlert size={20} className="text-purple" />
-                        <span>qintara</span>
+                        <span>Krypton</span>
                     </div>
                     <p className="footer-copyright">
-                        © {new Date().getFullYear()} Qintara Space. All rights reserved.
+                        © {new Date().getFullYear()} Krypton. All rights reserved.
                     </p>
                 </div>
 

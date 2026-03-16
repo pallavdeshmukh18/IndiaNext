@@ -1,0 +1,62 @@
+/* AuthButtons.css */
+.auth-btn-group {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  display: flex;
+  gap: 1rem;
+  z-index: 100;
+}
+
+.auth-btn-group a {
+  text-decoration: none;
+}
+
+.auth-btn-group button {
+  padding: 0.6rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 999px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+/* Login Button - Glassmorphism Style */
+.auth-btn-group a:first-child button {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-main);
+  border-color: var(--glass-border);
+}
+
+.auth-btn-group a:first-child button:hover {
+  background: var(--glass-hover);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Sign Up Button - Solid Style */
+.auth-btn-group a:last-child button {
+  background: var(--text-main);
+  color: var(--bg-color);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+.auth-btn-group a:last-child button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  .auth-btn-group {
+    top: 1rem;
+    right: 1rem;
+    gap: 0.5rem;
+  }
+  
+  .auth-btn-group button {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+}

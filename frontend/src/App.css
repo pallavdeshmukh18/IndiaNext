@@ -12,6 +12,17 @@
   align-items: center;
   position: relative;
   z-index: 10;
+  padding-top: 120px;
+}
+
+.main-content.auth-main-content {
+  width: 100%;
+  align-items: stretch;
+  padding-top: 0;
+}
+
+.main-content.auth-main-content > * {
+  width: 100%;
 }
 
 .hero-zone {
@@ -55,4 +66,32 @@
 @keyframes scrollBounce {
   0%, 100% { transform: translateY(0); opacity: 0.35; }
   50% { transform: translateY(8px); opacity: 0.8; }
+}
+
+.app-content {
+  transition: opacity 1.2s ease-out, filter 1.2s ease-out, transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  min-height: 100vh;
+}
+
+.app-content.is-loading {
+  opacity: 0;
+  filter: blur(10px);
+  transform: scale(0.95);
+  pointer-events: none;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-content.is-fading {
+  opacity: 1;
+  filter: blur(0px);
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.app-content.is-done {
+  opacity: 1;
+  filter: blur(0px);
+  transform: scale(1);
+  pointer-events: auto;
 }

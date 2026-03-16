@@ -52,7 +52,7 @@ const ArchitectureSection = () => {
                     {/* Layer 2: Core Engine */}
                     <div className="arch-layer core-layer">
                         <div className="core-box glass-panel">
-                            <div className="core-title">Qintara Core Engine</div>
+                            <div className="core-title">Krypton Core Engine</div>
                             <div className="core-modules">
                                 <motion.div variants={nodeVariants} className="arch-node internal">Detection Engine</motion.div>
                                 <motion.div variants={nodeVariants} className="arch-node internal highlight">Explainability Engine</motion.div>

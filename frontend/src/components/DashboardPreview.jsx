@@ -42,7 +42,7 @@ const DashboardPreview = () => {
                         <span className="dot green"></span>
                     </div>
                     <div className="mockup-tabs">
-                        <div className="tab active">qintara-dashboard</div>
+                        <div className="tab active">krypton-dashboard</div>
                         <div className="tab">logs</div>
                     </div>
                 </div>

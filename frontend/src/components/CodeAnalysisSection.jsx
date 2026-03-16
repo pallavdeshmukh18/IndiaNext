@@ -21,11 +21,11 @@ const RubiksCube = () => {
                     const dist = Math.abs(x) + Math.abs(y) + Math.abs(z);
                     if (dist > 2.5 && Math.random() > 0.4) continue;
 
-                    const isGlass = Math.random() > 0.7;
+                    const isAccent = Math.random() > 0.6;
                     temp.push({
                         key: `${x}-${y}-${z}`,
                         position: [x * size, y * size, z * size],
-                        isGlass
+                        isAccent
                     });
                 }
             }
@@ -35,21 +35,29 @@ const RubiksCube = () => {
 
     return (
         <group ref={group} rotation={[0.4, 0.4, 0]}>
-            {cubes.map(({ key, position, isGlass }) => (
+            {cubes.map(({ key, position, isAccent }) => (
                 <mesh key={key} position={position}>
                     <boxGeometry args={[1, 1, 1]} />
-                    {isGlass ? (
+                    {isAccent ? (
                         <meshPhysicalMaterial
-                            color="#a855f7"
-                            transmission={0.9}
+                            color="#ff9a84"
+                            emissive="#ff8c75"
+                            emissiveIntensity={0.45}
+                            transmission={0.78}
                             opacity={1}
                             transparent
-                            roughness={0.1}
-                            ior={1.5}
-                            thickness={0.5}
+                            roughness={0.14}
+                            ior={1.45}
+                            thickness={0.55}
                         />
                     ) : (
-                        <meshStandardMaterial color="#1f1f22" metalness={0.7} roughness={0.15} />
+                        <meshStandardMaterial
+                            color="#f8f8f8"
+                            emissive="#ffffff"
+                            emissiveIntensity={0.08}
+                            metalness={0.32}
+                            roughness={0.24}
+                        />
                     )}
                 </mesh>
             ))}
@@ -163,10 +171,10 @@ const CodeAnalysisSection = () => {
 
             <div className="canvas-container">
                 <Canvas camera={{ position: [0, 0, 14], fov: 40 }} dpr={[1, 2]}>
-                    <ambientLight intensity={2.5} />
+                    <ambientLight intensity={2.6} />
                     <directionalLight position={[10, 10, 5]} intensity={3} />
-                    <spotLight position={[-10, 10, 10]} angle={0.2} penumbra={1} intensity={4} color="#a855f7" />
-                    <spotLight position={[10, -10, 10]} angle={0.2} penumbra={1} intensity={4} color="#3b82f6" />
+                    <spotLight position={[-10, 10, 10]} angle={0.22} penumbra={1} intensity={3.8} color="#ffffff" />
+                    <spotLight position={[10, -10, 10]} angle={0.22} penumbra={1} intensity={4.6} color="#ff9a84" />
 
                     <RubiksCube />
                     <FloatingShapes />
