@@ -59,7 +59,7 @@ const emailScanSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
-    aiGeneratedAnalysis: {
+    hfPhishingAnalysis: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
     },

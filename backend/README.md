@@ -11,7 +11,7 @@ This backend now supports a multi-model security scan endpoint using the followi
 - `protectai/deberta-v3-base-prompt-injection` (prompt injection)
 - `ehsanaghaei/SecureBERT` (anomalous log behavior)
 - `openai-community/roberta-base-openai-detector` (AI-generated text detection)
-- `Hello-SimpleAI/chatgpt-detector-roberta` (email AI-generation detection)
+- `aamoshdahal/email-phishing-distilbert-finetuned` (dedicated email phishing detection)
 - `microsoft/trocr-base-printed` (screen OCR for screenshot-based phishing analysis)
 
 ## Environment
@@ -47,7 +47,7 @@ Optional model overrides are supported via env vars:
 - `HF_MODEL_PROMPT_INJECTION`
 - `HF_MODEL_ANOMALY_LOGS`
 - `HF_MODEL_AI_GENERATED_TEXT`
-- `HF_MODEL_EMAIL_AI_GENERATED`
+- `HF_MODEL_EMAIL_PHISHING`
 - `HF_MODEL_SCREEN_OCR`
 
 ## API-first (recommended)
@@ -63,7 +63,7 @@ No local model download is required. The backend will call Hugging Face hosted i
 - https://huggingface.co/protectai/deberta-v3-base-prompt-injection
 - https://huggingface.co/ehsanaghaei/SecureBERT
 - https://huggingface.co/openai-community/roberta-base-openai-detector
-- https://huggingface.co/Hello-SimpleAI/chatgpt-detector-roberta
+- https://huggingface.co/aamoshdahal/email-phishing-distilbert-finetuned
 
 Example download command:
 
@@ -151,9 +151,9 @@ Response includes:
 - `recommendation`
 - optional `logId` (when `saveToLog` is `true`)
 
-Email inbox scan responses also include `aiGeneratedAnalysis` for each parsed email, with:
+Email inbox scan responses also include `hfPhishingAnalysis` for each parsed email, with:
 
-- `isAIGenerated`
+- `isPhishing`
 - `riskScore`
 - `label`
 - `confidence`

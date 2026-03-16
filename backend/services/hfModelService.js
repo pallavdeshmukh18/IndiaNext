@@ -40,9 +40,9 @@ const MODEL_REGISTRY = {
   aiGeneratedText:
     process.env.HF_MODEL_AI_GENERATED_TEXT ||
     "openai-community/roberta-base-openai-detector",
-  emailAiGenerated:
-    process.env.HF_MODEL_EMAIL_AI_GENERATED ||
-    "Hello-SimpleAI/chatgpt-detector-roberta",
+  emailPhishing:
+    process.env.HF_MODEL_EMAIL_PHISHING ||
+    "aamoshdahal/email-phishing-distilbert-finetuned",
   screenOcr:
     process.env.HF_MODEL_SCREEN_OCR ||
     "microsoft/trocr-base-printed"

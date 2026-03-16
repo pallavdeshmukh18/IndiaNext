@@ -46,7 +46,7 @@ router.get("/", async (req, res) => {
           riskLevel: mlResult.risk_level,
           label: mlResult.label,
           explanation: mlResult.explanation,
-          aiGeneratedAnalysis: mlResult.aiGeneratedAnalysis || null,
+          hfPhishingAnalysis: mlResult.hfPhishingAnalysis || null,
           modelSource: mlResult.model_source,
           scoreBasis: mlResult.score_basis,
         });
@@ -65,7 +65,7 @@ router.get("/", async (req, res) => {
           riskLevel: scanRecord.riskLevel,
           label: scanRecord.label,
           explanation: scanRecord.explanation,
-          aiGeneratedAnalysis: scanRecord.aiGeneratedAnalysis || mlResult.aiGeneratedAnalysis || null,
+          hfPhishingAnalysis: scanRecord.hfPhishingAnalysis || mlResult.hfPhishingAnalysis || null,
           explainability: mlResult.explainability || null,
           modelSource: scanRecord.modelSource,
           scoreBasis: scanRecord.scoreBasis,

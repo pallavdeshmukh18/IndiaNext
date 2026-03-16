@@ -33,137 +33,134 @@ function buildEmailModelInput(emailData = {}) {
     .slice(0, 4000);
 }
 
-function isAiGeneratedLabel(label) {
+function isPhishingLabel(label) {
   const normalized = safeLower(label);
   return (
-    normalized.includes("fake") ||
-    normalized.includes("ai") ||
-    normalized.includes("generated") ||
-    normalized.includes("machine") ||
+    normalized.includes("phish") ||
+    normalized.includes("spam") ||
+    normalized.includes("scam") ||
+    normalized.includes("fraud") ||
+    normalized.includes("malicious") ||
     normalized === "label_1"
   );
 }
 
-function isHumanLabel(label) {
+function isSafeLabel(label) {
   const normalized = safeLower(label);
   return (
-    normalized.includes("real") ||
-    normalized.includes("human") ||
-    normalized.includes("organic") ||
+    normalized.includes("safe") ||
+    normalized.includes("benign") ||
+    normalized.includes("legitimate") ||
+    normalized.includes("ham") ||
     normalized === "label_0"
   );
 }
 
-function resolveAiProbability(prediction = {}) {
+function resolvePhishingProbability(prediction = {}) {
   const candidates = Array.isArray(prediction.candidates) ? prediction.candidates : [];
-  const aiCandidate = candidates.find((candidate) => isAiGeneratedLabel(candidate?.label));
+  const phishingCandidate = candidates.find((candidate) => isPhishingLabel(candidate?.label));
 
-  if (aiCandidate) {
-    return clamp(Number(aiCandidate.score || 0), 0, 1);
+  if (phishingCandidate) {
+    return clamp(Number(phishingCandidate.score || 0), 0, 1);
   }
 
-  if (isAiGeneratedLabel(prediction.label)) {
+  if (isPhishingLabel(prediction.label)) {
     return clamp(Number(prediction.score || 0), 0, 1);
   }
 
-  if (isHumanLabel(prediction.label)) {
+  if (isSafeLabel(prediction.label)) {
     return clamp(1 - Number(prediction.score || 0), 0, 1);
   }
 
   return clamp(Number(prediction.score || 0), 0, 1);
 }
 
-function buildEmailAiIndicators(emailText = "", emailData = {}) {
+function buildEmailPhishingIndicators(emailText = "", emailData = {}) {
   const normalized = safeLower(emailText);
   const indicators = [];
-  const tokens = normalized.split(/\s+/).filter(Boolean);
-  const uniqueTokens = new Set(tokens);
-  const diversity = tokens.length ? uniqueTokens.size / tokens.length : 1;
-  const sentenceCount = Math.max(normalized.split(/[.!?]+/).filter((part) => part.trim()).length, 1);
-  const avgSentenceLength = tokens.length / sentenceCount;
 
-  if (/dear (user|customer|valued customer|sir|madam)/.test(normalized)) {
-    indicators.push("generic greeting instead of a personal name");
+  if (/(urgent|immediately|asap|within 24 hours|act now)/.test(normalized)) {
+    indicators.push("urgent or high-pressure wording");
   }
 
-  if (/(kind regards|best regards|sincerely|warm regards|regards,)/.test(normalized)) {
-    indicators.push("formal template-style signoff");
+  if (/(verify your account|reset your password|confirm your identity|login to continue)/.test(normalized)) {
+    indicators.push("requests to verify an account or reset credentials");
   }
 
-  if (avgSentenceLength >= 18) {
-    indicators.push("very polished sentence structure");
+  if (/(otp|one-time password|passcode|security code)/.test(normalized)) {
+    indicators.push("requests for sensitive codes or OTPs");
   }
 
-  if (tokens.length >= 80 && diversity <= 0.68) {
-    indicators.push("repetitive wording across the email");
+  if (/(suspend|suspension|deactivated|locked|disabled)/.test(normalized)) {
+    indicators.push("threats about suspension or account lockout");
   }
 
-  if (/(furthermore|moreover|in addition|therefore|accordingly)/.test(normalized)) {
-    indicators.push("overly polished connector words");
+  if (Array.isArray(emailData.links) && emailData.links.length > 0) {
+    indicators.push("embedded links that ask the reader to take action");
   }
 
-  if ((emailData.links || []).length === 0 && tokens.length >= 120) {
-    indicators.push("long polished copy without concrete personal details");
+  if (/(bank|payroll|invoice|wallet|gift card|refund)/.test(normalized)) {
+    indicators.push("financial or payment-themed wording");
   }
 
   return indicators.slice(0, 5);
 }
 
-function buildEmailAiExplanation(isAIGenerated, indicators = [], aiProbability = 0) {
-  const probabilityPercent = Number((clamp(aiProbability, 0, 1) * 100).toFixed(1));
+function buildEmailPhishingExplanation(isPhishing, indicators = [], phishingProbability = 0) {
+  const probabilityPercent = Number((clamp(phishingProbability, 0, 1) * 100).toFixed(1));
 
-  if (isAIGenerated) {
+  if (isPhishing) {
     if (indicators.length > 0) {
-      return `This email may be AI-generated because it shows ${indicators.slice(0, 3).join(", ")}. Estimated AI-written likelihood is ${probabilityPercent}%.`;
+      return `This email looks suspicious because it contains ${indicators.slice(0, 3).join(", ")}. Estimated phishing likelihood is ${probabilityPercent}%.`;
     }
 
-    return `This email may be AI-generated because its wording and sentence flow look highly machine-written. Estimated AI-written likelihood is ${probabilityPercent}%.`;
+    return `This email looks suspicious because its wording and structure match common phishing patterns. Estimated phishing likelihood is ${probabilityPercent}%.`;
   }
 
   if (indicators.length > 0) {
-    return "This email does not strongly look AI-generated. A few polished patterns were present, but they were not strong enough to treat the email as machine-written.";
+    return "This email does not look strongly phishy overall, although a few warning signs were present.";
   }
 
-  return "This email does not strongly look AI-generated. Its wording appears closer to normal human-written email patterns.";
+  return "This email does not look strongly phishy based on its wording and structure.";
 }
 
-async function analyzeEmailAiGenerated(emailData = {}) {
+async function analyzeEmailHfPhishing(emailData = {}) {
   const emailText = buildEmailModelInput(emailData);
 
   if (!emailText) {
     return {
-      isAIGenerated: false,
+      isPhishing: false,
       riskScore: 0,
-      label: "Likely Human-Written Email",
+      label: "Likely Safe Email",
       confidence: 0,
-      explanation: "There was not enough email content to check whether the writing looks AI-generated.",
+      explanation: "There was not enough email content to run the phishing email detector.",
       indicators: [],
       explainability: {
-        label: "Likely Human-Written Email",
+        label: "Likely Safe Email",
         confidencePercent: 0,
-        summary: "There was not enough email content to check whether the writing looks AI-generated.",
+        summary: "There was not enough email content to run the phishing email detector.",
         indicators: []
       }
     };
   }
 
   try {
-    const prediction = await classifyText(MODEL_REGISTRY.emailAiGenerated, emailText);
-    const aiProbability = resolveAiProbability(prediction);
-    const indicators = buildEmailAiIndicators(emailText, emailData);
-    const isAIGenerated = aiProbability >= 0.55 || (isAiGeneratedLabel(prediction.label) && aiProbability >= 0.4);
-    const explanation = buildEmailAiExplanation(isAIGenerated, indicators, aiProbability);
+    const prediction = await classifyText(MODEL_REGISTRY.emailPhishing, emailText);
+    const phishingProbability = resolvePhishingProbability(prediction);
+    const indicators = buildEmailPhishingIndicators(emailText, emailData);
+    const isPhishing = phishingProbability >= 0.55 || (isPhishingLabel(prediction.label) && phishingProbability >= 0.4);
+    const explanation = buildEmailPhishingExplanation(isPhishing, indicators, phishingProbability);
 
     return {
-      isAIGenerated,
-      riskScore: Math.round(aiProbability * 100),
-      label: isAIGenerated ? "Likely AI-Generated Email" : "Likely Human-Written Email",
-      confidence: aiProbability,
+      isPhishing,
+      riskScore: Math.round(phishingProbability * 100),
+      label: isPhishing ? "Likely Phishing Email" : "Likely Safe Email",
+      confidence: phishingProbability,
       explanation,
       indicators,
       explainability: {
-        label: isAIGenerated ? "Likely AI-Generated Email" : "Likely Human-Written Email",
-        confidencePercent: Number((aiProbability * 100).toFixed(1)),
+        label: isPhishing ? "Likely Phishing Email" : "Likely Safe Email",
+        confidencePercent: Number((phishingProbability * 100).toFixed(1)),
         summary: explanation,
         indicators,
         topCandidates: Array.isArray(prediction.candidates)
@@ -175,24 +172,24 @@ async function analyzeEmailAiGenerated(emailData = {}) {
       }
     };
   } catch (error) {
-    const indicators = buildEmailAiIndicators(emailText, emailData);
+    const indicators = buildEmailPhishingIndicators(emailText, emailData);
     const heuristicScore = clamp(indicators.length * 18, 0, 100);
-    const isAIGenerated = heuristicScore >= 55;
-    const explanation = isAIGenerated
-      ? `This email may be AI-generated because it shows ${indicators.slice(0, 3).join(", ")}.`
-      : "This email does not strongly look AI-generated based on its writing style.";
+    const isPhishing = heuristicScore >= 55;
+    const explanation = isPhishing
+      ? `This email looks suspicious because it contains ${indicators.slice(0, 3).join(", ")}.`
+      : "This email does not look strongly phishy based on its wording and structure.";
 
     return {
-      isAIGenerated,
+      isPhishing,
       riskScore: heuristicScore,
-      label: isAIGenerated ? "Possibly AI-Generated Email" : "Likely Human-Written Email",
+      label: isPhishing ? "Possibly Phishing Email" : "Likely Safe Email",
       confidence: clamp(heuristicScore / 100, 0, 1),
       explanation,
       indicators,
       explainability: {
-        label: isAIGenerated ? "Possibly AI-Generated Email" : "Likely Human-Written Email",
+        label: isPhishing ? "Possibly Phishing Email" : "Likely Safe Email",
         confidencePercent: Number(clamp(heuristicScore, 0, 100).toFixed(1)),
-        summary: `${explanation} The estimate was based on visible writing-style patterns because the dedicated detector was unavailable.`,
+        summary: `${explanation} The estimate was based on visible phishing signs because the dedicated detector was unavailable.`,
         indicators
       },
       source: "heuristic_fallback",
@@ -204,11 +201,11 @@ async function analyzeEmailAiGenerated(emailData = {}) {
 async function analyzeEmail(emailData) {
   const scriptPath = path.join(__dirname, "ml_bridge.py");
   const pythonBin = process.env.PYTHON_BIN || "python3";
-  const [{ stdout }, aiGeneratedAnalysis] = await Promise.all([
+  const [{ stdout }, hfPhishingAnalysis] = await Promise.all([
     execFileAsync(pythonBin, [scriptPath, JSON.stringify(emailData)], {
       maxBuffer: 1024 * 1024,
     }),
-    analyzeEmailAiGenerated(emailData)
+    analyzeEmailHfPhishing(emailData)
   ]);
 
   const result = JSON.parse(stdout.trim());
@@ -238,12 +235,12 @@ async function analyzeEmail(emailData) {
     };
   }
 
-  result.aiGeneratedAnalysis = aiGeneratedAnalysis;
+  result.hfPhishingAnalysis = hfPhishingAnalysis;
 
   return result;
 }
 
 module.exports = {
   analyzeEmail,
-  analyzeEmailAiGenerated,
+  analyzeEmailHfPhishing,
 };
