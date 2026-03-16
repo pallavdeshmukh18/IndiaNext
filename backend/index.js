@@ -6,14 +6,18 @@ const mongoose = require("mongoose");
 const os = require("os");
 
 const app = express();
+const threatRoutes = require("./routes/threatRoutes");
+const historyRoutes = require("./routes/historyRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 
 app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 8000;
 
-const threatRoutes = require("./routes/threatRoutes");
 app.use("/api/threats", threatRoutes);
+app.use("/api", historyRoutes);
+app.use("/api", analyticsRoutes);
 
 // MongoDB connection
 mongoose
