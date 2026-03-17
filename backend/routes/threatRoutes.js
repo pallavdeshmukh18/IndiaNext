@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const router = express.Router();
+const { attachUserIfPresent } = require('../middleware/authMiddleware');
 const {
     analyzeThreat,
     quickAnalyzeThreat,
@@ -45,6 +46,8 @@ const parseSuiteUpload = (req, res, next) => {
         });
     });
 };
+
+router.use(attachUserIfPresent);
 
 // POST /api/threats/quick-analyze
 router.post('/quick-analyze', quickAnalyzeThreat);

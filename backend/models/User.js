@@ -34,7 +34,15 @@ const userSchema = new mongoose.Schema(
         avatar: {
             type: String,
             default: ""
-        }
+        },
+        gmailEmail: {
+            type: String,
+            default: null,
+        },
+        gmailTokens: {
+            type: mongoose.Schema.Types.Mixed,
+            default: null,
+        },
     },
     { timestamps: true }
 );

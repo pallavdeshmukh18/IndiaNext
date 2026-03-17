@@ -1,3 +1,5 @@
+const User = require("../models/User");
+
 const { google } = require("googleapis");
 
 const SCOPES = [
@@ -8,6 +10,31 @@ const SCOPES = [
 
 const tokenStore = new Map();
 let latestUserId = null;
+
+async function persistUserGmailTokens(email, tokens) {
+  try {
+    await User.findOneAndUpdate(
+      { email: email.toLowerCase() },
+      { $set: { gmailEmail: email.toLowerCase(), gmailTokens: tokens } },
+      { upsert: false }
+    );
+  } catch (err) {
+    // Non-fatal: in-memory store is the primary path
+    console.error("Failed to persist Gmail tokens:", err.message);
+  }
+}
+
+async function loadGmailTokensFromDb(email) {
+  try {
+    const user = await User.findOne(
+      { email: email.toLowerCase() },
+      "gmailTokens"
+    ).lean();
+    return user?.gmailTokens || null;
+  } catch (_err) {
+    return null;
+  }
+}
 
 function createOAuthClient() {
   return new google.auth.OAuth2(
@@ -30,6 +57,7 @@ function getAuthUrl(state) {
 function storeUserTokens(userId, tokens) {
   tokenStore.set(userId, tokens);
   latestUserId = userId;
+  persistUserGmailTokens(userId, tokens).catch(() => {});
 }
 
 function getUserTokens(userId) {
@@ -54,4 +82,5 @@ module.exports = {
   storeUserTokens,
   getUserTokens,
   getLatestUserTokens,
+  loadGmailTokensFromDb,
 };

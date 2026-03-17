@@ -1,6 +1,6 @@
 const express = require("express");
 
-const { createOAuthClient, getLatestUserTokens, getUserTokens } = require("../config/googleAuth");
+const { createOAuthClient, getLatestUserTokens, getUserTokens, loadGmailTokensFromDb, storeUserTokens } = require("../config/googleAuth");
 const { fetchLatestEmails } = require("../services/gmailService");
 const { parseEmailMessage } = require("../services/emailParser");
 const { analyzeEmail } = require("../services/mlBridge");
@@ -10,9 +10,20 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   const requestedUserId = req.query.userId || req.query.email;
-  const tokenContext = requestedUserId
-    ? { userId: requestedUserId, tokens: getUserTokens(requestedUserId) }
-    : getLatestUserTokens();
+  let tokenContext;
+
+  if (requestedUserId) {
+    let tokens = getUserTokens(requestedUserId);
+    if (!tokens) {
+      tokens = await loadGmailTokensFromDb(requestedUserId);
+      if (tokens) {
+        storeUserTokens(requestedUserId, tokens); // warm the in-memory cache
+      }
+    }
+    tokenContext = { userId: requestedUserId, tokens: tokens || null };
+  } else {
+    tokenContext = getLatestUserTokens();
+  }
 
   if (!tokenContext?.tokens) {
     return res.status(401).json({

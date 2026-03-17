@@ -1,0 +1,9 @@
+{
+  "react-native-tools.projectRoot": "mobile",
+  "react-native-tools.packageManager": "npm",
+  "terminal.integrated.env.osx": {
+    "ANDROID_HOME": "/Users/nisarganand/Library/Android/sdk",
+    "ANDROID_SDK_ROOT": "/Users/nisarganand/Library/Android/sdk",
+    "PATH": "/Users/nisarganand/Library/Android/sdk/platform-tools:/opt/homebrew/bin:${env:PATH}"
+  }
+}
