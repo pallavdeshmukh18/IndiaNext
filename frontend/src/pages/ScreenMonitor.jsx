@@ -12,22 +12,10 @@ import {
   Volume2,
   VolumeX
 } from 'lucide-react';
-import { threatApi } from '../lib/api';
 import './WorkspacePages.css';
 import './ScreenMonitor.css';
 
-const AI_PROVIDERS = [
-  { key: 'backend', label: 'Backend OCR', note: 'IndiaNext server - best for readable screen text' },
-  { key: 'gemini', label: 'Gemini 2.5 Flash', note: 'Google - direct browser vision scan' },
-  { key: 'openai', label: 'GPT-4o', note: 'OpenAI' },
-  { key: 'grok', label: 'Grok Vision', note: 'xAI' }
-];
-
-const GEMINI_MODEL_CANDIDATES = [
-  'gemini-2.5-flash',
-  'gemini-flash-latest',
-  'gemini-2.0-flash'
-];
+const GROQ_VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
 const SYSTEM_PROMPT = `You are an expert cybersecurity analyst monitoring a user's screen in real time.
 Your task is to inspect each screenshot and detect any security threats, including:
@@ -50,12 +38,14 @@ Respond ONLY with a valid JSON object - no markdown, no explanation outside the 
 If the screen appears safe, set riskLevel to LOW and riskScore below 15.`;
 
 const STORAGE_KEY_API = 'sm.apiKey';
-const STORAGE_KEY_PROVIDER = 'sm.provider';
-const ENV_GEMINI_API_KEY = String(
-  import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || ''
-).trim();
-const DIRECT_AI_TIMEOUT_MS = 20000;
-const BACKEND_AI_TIMEOUT_MS = 90000;
+const ENV_GROK_API_KEY = String(import.meta.env.VITE_GROK_API_KEY || '').trim();
+function getDefaultApiKey() {
+  if (ENV_GROK_API_KEY) return ENV_GROK_API_KEY;
+  const savedApiKey = localStorage.getItem(STORAGE_KEY_API);
+  if (savedApiKey) return savedApiKey;
+  return '';
+}
+const GROK_TIMEOUT_MS = 20000;
 
 function deriveRiskLevel(riskScore) {
   if (riskScore >= 75) return 'HIGH';
@@ -122,89 +112,24 @@ function parseModelJson(text) {
   }
 }
 
-async function callGemini(apiKey, base64Jpeg) {
-  let lastError = null;
-
-  for (const modelName of GEMINI_MODEL_CANDIDATES) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: SYSTEM_PROMPT },
-              { inline_data: { mime_type: 'image/jpeg', data: base64Jpeg } }
-            ]
-          }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 300 }
-        })
-      }
-    );
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      lastError = new Error(err?.error?.message || `Gemini error ${res.status} on ${modelName}`);
-      continue;
-    }
-
-    const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-    return parseModelJson(text);
-  }
-
-  throw lastError || new Error('No Gemini model returned a valid response.');
-}
-
-async function callOpenAI(apiKey, base64Jpeg) {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+async function callGrok(apiKey, base64Jpeg, signal) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
+    signal,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: 'gpt-4o',
-      response_format: { type: 'json_object' },
+      model: GROQ_VISION_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         {
           role: 'user',
           content: [
             { type: 'text', text: 'Analyze this screen capture and base the answer only on what is visible in the image.' },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Jpeg}`, detail: 'high' } }
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Jpeg}` } }
           ]
         }
       ],
-      max_tokens: 300,
-      temperature: 0.2
-    })
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `OpenAI error ${res.status}`);
-  }
-
-  const data = await res.json();
-  return parseModelJson(data.choices[0].message.content);
-}
-
-async function callGrok(apiKey, base64Jpeg) {
-  const res = await fetch('https://api.x.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: 'grok-2-vision-latest',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: 'Analyze this screen capture and base the answer only on what is visible in the image.' },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Jpeg}`, detail: 'high' } }
-          ]
-        }
-      ],
-      max_tokens: 300,
+      max_completion_tokens: 300,
       temperature: 0.2
     })
   });
@@ -219,45 +144,16 @@ async function callGrok(apiKey, base64Jpeg) {
   return parseModelJson(text);
 }
 
-async function callBackend(sessionToken, screenshotDataUrl, signal) {
-  if (!sessionToken) {
-    throw new Error('Sign in again to use backend screen analysis.');
-  }
-
-  const response = await threatApi.liveScreenAnalyze({
-    token: sessionToken,
-    payload: {
-      screenshotBase64: screenshotDataUrl
-    },
-    signal
-  });
-
-  return normalizeMonitorResult(response);
-}
-
-async function analyzeWithAI(provider, apiKey, base64Jpeg) {
-  if (provider === 'openai') return callOpenAI(apiKey, base64Jpeg);
-  if (provider === 'grok') return callGrok(apiKey, base64Jpeg);
-  return callGemini(apiKey, base64Jpeg);
-}
-
-async function analyzeWithTimeout(provider, { apiKey, sessionToken, screenshotDataUrl }) {
-  const timeoutMs = provider === 'backend' ? BACKEND_AI_TIMEOUT_MS : DIRECT_AI_TIMEOUT_MS;
+async function analyzeWithTimeout({ apiKey, screenshotDataUrl }) {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = window.setTimeout(() => controller.abort(), GROK_TIMEOUT_MS);
 
   try {
-    if (provider === 'backend') {
-      return await callBackend(sessionToken, screenshotDataUrl, controller.signal);
-    }
-
-    return await analyzeWithAI(provider, apiKey, dataUrlToBase64(screenshotDataUrl)).then(normalizeMonitorResult);
+    return await callGrok(apiKey, dataUrlToBase64(screenshotDataUrl), controller.signal).then(normalizeMonitorResult);
   } catch (error) {
     if (error?.name === 'AbortError' || String(error?.message || '').includes('timed out')) {
       throw new Error(
-        provider === 'backend'
-          ? `Backend screen analysis timed out after ${Math.round(timeoutMs / 1000)}s. The OCR/model pipeline is taking too long.`
-          : `AI request timed out after ${Math.round(timeoutMs / 1000)}s. Check API key, quota, or network.`
+        `AI request timed out after ${Math.round(GROK_TIMEOUT_MS / 1000)}s. Check API key, quota, or network.`
       );
     }
 
@@ -321,22 +217,20 @@ function primeSpeech(voiceEnabled) {
 
 const MAX_LOG = 40;
 
-const ScreenMonitor = ({ session }) => {
+const ScreenMonitor = () => {
   const videoRef = React.useRef(null);
   const streamRef = React.useRef(null);
   const intervalRef = React.useRef(null);
   const isScanningRef = React.useRef(false);
   const lastAnnouncementRef = React.useRef('');
-  const sessionToken = session?.token || '';
 
   const [isSharing, setIsSharing] = React.useState(false);
   const [isScanning, setIsScanning] = React.useState(false);
   const [voiceEnabled, setVoiceEnabled] = React.useState(true);
   const [showSettings, setShowSettings] = React.useState(true);
   const [interval, setIntervalMs] = React.useState(5000);
-  const [apiKey, setApiKey] = React.useState(() => localStorage.getItem(STORAGE_KEY_API) || ENV_GEMINI_API_KEY || '');
+  const [apiKey, setApiKey] = React.useState(() => getDefaultApiKey());
   const [showApiKey, setShowApiKey] = React.useState(false);
-  const [aiProvider, setAiProvider] = React.useState(() => localStorage.getItem(STORAGE_KEY_PROVIDER) || 'backend');
   const [log, setLog] = React.useState([]);
   const [latestResult, setLatestResult] = React.useState(null);
   const [scanStatus, setScanStatus] = React.useState('idle');
@@ -391,19 +285,16 @@ const ScreenMonitor = ({ session }) => {
       return;
     }
 
-    const selectedProvider = aiProvider !== 'backend' && !apiKey.trim() ? 'backend' : aiProvider;
-
-    if (selectedProvider !== 'backend' && !apiKey.trim()) {
+    if (!apiKey.trim()) {
       setScanStatus('idle');
-      setErrorMsg('Enter an API key in Settings before monitoring.');
-      speak('API key missing. Please add the provider API key in settings.', voiceEnabled);
+      setErrorMsg('Enter your Grok API key in Settings before monitoring.');
+      speak('API key missing. Please add your Grok API key in settings.', voiceEnabled);
       return;
     }
 
     try {
-      const parsed = await analyzeWithTimeout(selectedProvider, {
+      const parsed = await analyzeWithTimeout({
         apiKey: apiKey.trim(),
-        sessionToken,
         screenshotDataUrl
       });
 
@@ -413,19 +304,18 @@ const ScreenMonitor = ({ session }) => {
 
       setLatestResult(entry);
       appendLog(entry);
-      setErrorMsg(selectedProvider !== aiProvider ? 'Selected provider had no API key, so backend OCR mode was used for this scan.' : '');
+      setErrorMsg('');
 
       const isSuspicious = riskLevel === 'HIGH' || riskLevel === 'MEDIUM' || riskScore >= 40;
       setScanStatus(isSuspicious ? 'suspicious' : 'safe');
 
+      window.speechSynthesis?.cancel();
       if (isSuspicious) {
-        const announcement = `Security alert. ${riskLevel} risk. ${explanation} ${recommendation}`.trim();
-        if (lastAnnouncementRef.current !== announcement) {
-          window.speechSynthesis?.cancel();
-          speak(announcement, voiceEnabled);
-          lastAnnouncementRef.current = announcement;
-        }
+        const announcement = `Security alert. ${riskLevel} risk. ${explanation}${recommendation ? ' ' + recommendation : ''}`.trim();
+        speak(announcement, voiceEnabled);
+        lastAnnouncementRef.current = announcement;
       } else {
+        speak(`Screen looks safe. Risk score ${riskScore}.`, voiceEnabled);
         lastAnnouncementRef.current = '';
       }
     } catch (err) {
@@ -439,12 +329,10 @@ const ScreenMonitor = ({ session }) => {
         riskLevel: 'LOW',
         threatType: 'API error',
         explanation: err.message,
-        recommendation: selectedProvider === 'backend'
-          ? 'Check backend availability and your login session.'
-          : 'Check your API key and selected provider.'
+        recommendation: 'Check your Grok API key and quota.'
       });
     }
-  }, [aiProvider, apiKey, appendLog, sessionToken, voiceEnabled]);
+  }, [apiKey, appendLog, voiceEnabled]);
 
   const startScanning = React.useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -559,27 +447,7 @@ const ScreenMonitor = ({ session }) => {
         <section className="sm-settings-panel">
           <div className="sm-settings-row">
             <div className="sm-settings-field sm-settings-field-wide">
-              <label className="analysis-label">AI Provider</label>
-              <div className="analysis-chip-row">
-                {AI_PROVIDERS.map((provider) => (
-                  <button
-                    key={provider.key}
-                    type="button"
-                    className={`analysis-channel-button${aiProvider === provider.key ? ' active' : ''}`}
-                    onClick={() => {
-                      setAiProvider(provider.key);
-                      localStorage.setItem(STORAGE_KEY_PROVIDER, provider.key);
-                    }}
-                  >
-                    {provider.label}
-                    <span className="sm-provider-note">{provider.note}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="sm-settings-field sm-settings-field-wide">
-              <label className="analysis-label">API Key</label>
+              <label className="analysis-label">Grok API Key</label>
               <div className="sm-apikey-row">
                 <input
                   type={showApiKey ? 'text' : 'password'}
@@ -589,14 +457,9 @@ const ScreenMonitor = ({ session }) => {
                     setApiKey(event.target.value);
                     localStorage.setItem(STORAGE_KEY_API, event.target.value);
                   }}
-                  placeholder={
-                    aiProvider === 'backend'
-                      ? 'Not required for Backend OCR mode'
-                      : `Paste your ${AI_PROVIDERS.find((provider) => provider.key === aiProvider)?.label} API key`
-                  }
+                  placeholder="Paste your Grok API key"
                   autoComplete="off"
                   spellCheck={false}
-                  disabled={aiProvider === 'backend'}
                 />
                 <button
                   type="button"
@@ -608,8 +471,7 @@ const ScreenMonitor = ({ session }) => {
                 </button>
               </div>
               <p className="analysis-helper" style={{ marginTop: '0.35rem' }}>
-                Backend OCR mode uses your signed-in IndiaNext session and does not require a third-party key. Gemini
-                auto-loads from <strong>frontend/.env</strong> key <strong>VITE_GEMINI_API_KEY</strong> when present.
+                Auto-loads from <strong>frontend/.env</strong> key <strong>VITE_GROK_API_KEY</strong>.
               </p>
             </div>
 
@@ -675,11 +537,7 @@ const ScreenMonitor = ({ session }) => {
           <div className="workspace-panel-header">
             <div>
               <h3>Screen preview</h3>
-              <p>
-                {aiProvider === 'backend'
-                  ? 'Frames are captured locally and sent to the IndiaNext backend OCR pipeline so visible text and phishing cues can be analyzed reliably.'
-                  : 'Frames are captured locally and sent from your browser to the selected vision provider.'}
-              </p>
+              <p>Frames are captured locally and sent from your browser to Grok Vision for analysis.</p>
             </div>
             <ShieldAlert size={18} className="workspace-inline-icon" />
           </div>
@@ -689,6 +547,7 @@ const ScreenMonitor = ({ session }) => {
               <video
                 ref={videoRef}
                 className="sm-video"
+                autoPlay
                 muted
                 playsInline
               />
