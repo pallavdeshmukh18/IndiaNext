@@ -1,4 +1,4 @@
-# 🛡️ IndiaNext - AI-Powered Threat Detection Platform
+# 🛡️ Krypton - AI-Powered Threat Detection Platform
 
 **IndiaNext** is a comprehensive, full-stack threat detection and analysis platform that leverages machine learning to protect users from phishing, malware, prompt injection, deepfakes, and other digital threats across multiple channels: email, messaging, URLs, logs, and more.
 
