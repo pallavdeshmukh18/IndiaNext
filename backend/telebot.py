@@ -1,6 +1,9 @@
 import base64
+import asyncio
 import os
+import socket
 from pathlib import Path
+from typing import Optional
 
 import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -35,7 +38,11 @@ def load_local_env():
 load_local_env()
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEBOT_API_URL = os.getenv("TELEBOT_API_URL", "http://localhost:8001/analyze")
+TELEBOT_API_URL = os.getenv("TELEBOT_API_URL", "").strip()
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
+SUITE_ANALYZE_URL = f"{BACKEND_BASE_URL.rstrip('/')}/api/threats/suite-analyze"
+TELEGRAM_API_HOST = os.getenv("TELEGRAM_API_HOST", "api.telegram.org")
+TELEGRAM_API_PORT = int(os.getenv("TELEGRAM_API_PORT", "443"))
 
 SERVICE_MENU = {
     "1": ("email_phishing", "Email Phishing", "Email Shield"),
@@ -59,6 +66,15 @@ SERVICE_PROMPTS = {
 
 MEDIA_SERVICES = {"deepfake_voice", "deepfake_image"}
 SERVICE_BY_KEY = {value[0]: {"label": value[1], "button": value[2]} for value in SERVICE_MENU.values()}
+SERVICE_TO_CHECK = {
+    "email_phishing": "phishingMessaging",
+    "url_phishing": "maliciousUrl",
+    "prompt_injection": "promptInjection",
+    "anomaly": "anomalyLogs",
+    "ai_content": "aiGeneratedContent",
+    "deepfake_image": "deepfakeImage",
+    "deepfake_voice": "deepfakeAudio",
+}
 
 
 def build_main_menu():
@@ -182,10 +198,106 @@ async def select_service(update: Update, context: ContextTypes.DEFAULT_TYPE, sel
     )
 
 
-async def call_bot_api(payload: dict):
-    response = requests.post(TELEBOT_API_URL, json=payload, timeout=120)
+def build_suite_payload(
+    service: str,
+    text: Optional[str] = None,
+    image_base64: Optional[str] = None,
+    audio_base64: Optional[str] = None,
+):
+    if service == "email_phishing":
+        if not text:
+            raise ValueError("Email text is required.")
+        return {"messageText": text, "saveToLog": False}
+
+    if service == "url_phishing":
+        if not text:
+            raise ValueError("URL text is required.")
+        return {"url": text.strip(), "saveToLog": False}
+
+    if service == "prompt_injection":
+        if not text:
+            raise ValueError("Prompt text is required.")
+        return {"promptInput": text, "saveToLog": False}
+
+    if service == "anomaly":
+        if not text:
+            raise ValueError("Log or activity text is required.")
+        return {"logText": text, "saveToLog": False}
+
+    if service == "ai_content":
+        if not text:
+            raise ValueError("Content text is required.")
+        return {"generatedText": text, "saveToLog": False}
+
+    if service == "deepfake_image":
+        if not image_base64:
+            raise ValueError("Image data is required.")
+        return {"imageBase64": image_base64, "saveToLog": False}
+
+    if service == "deepfake_voice":
+        if not audio_base64:
+            raise ValueError("Audio data is required.")
+        return {"audioBase64": audio_base64, "saveToLog": False}
+
+    raise ValueError(f"Unsupported service '{service}'.")
+
+
+def format_suite_result(service: str, backend_result: dict):
+    check_key = SERVICE_TO_CHECK.get(service)
+    checks = backend_result.get("checks") or {}
+    selected = checks.get(check_key) or {}
+    explanation = selected.get("explanation") or backend_result.get("summary") or "No explanation returned."
+
+    if isinstance(explanation, list):
+        explanation = " ".join(str(item) for item in explanation if item)
+
+    return {
+        "service": service,
+        "serviceLabel": SERVICE_BY_KEY.get(service, {}).get("label", service),
+        "isSuspicious": bool(selected.get("isSuspicious", backend_result.get("isSuspicious", False))),
+        "riskScore": int(selected.get("riskScore", backend_result.get("overallRiskScore", 0))),
+        "riskLevel": selected.get("riskLevel", backend_result.get("riskLevel", "LOW")),
+        "threatType": selected.get("threatType", backend_result.get("primaryThreatType", "None")),
+        "label": selected.get("label", "unknown"),
+        "confidence": float(selected.get("confidence", 0)),
+        "model": selected.get("model"),
+        "source": selected.get("source", backend_result.get("runtime", {}).get("mode", "unknown")),
+        "recommendation": backend_result.get("recommendation"),
+        "explanation": explanation,
+        "summary": backend_result.get("summary", ""),
+        "raw": selected,
+    }
+
+
+def post_json(url: str, payload: dict):
+    response = requests.post(url, json=payload, timeout=120)
     response.raise_for_status()
     return response.json()
+
+
+async def call_bot_api(payload: dict):
+    suite_payload = build_suite_payload(
+        payload.get("service", ""),
+        text=payload.get("text"),
+        image_base64=payload.get("image_base64"),
+        audio_base64=payload.get("audio_base64"),
+    )
+
+    try:
+        backend_result = await asyncio.to_thread(post_json, SUITE_ANALYZE_URL, suite_payload)
+        return format_suite_result(payload.get("service", ""), backend_result)
+    except requests.RequestException as exc:
+        backend_error = exc
+
+    if TELEBOT_API_URL:
+        try:
+            return await asyncio.to_thread(post_json, TELEBOT_API_URL, payload)
+        except requests.RequestException as exc:
+            raise requests.RequestException(
+                f"Backend direct scan failed ({backend_error}) and helper API failed ({exc})."
+            ) from exc
+
+    raise backend_error
 
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -337,9 +449,31 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Scan failed: {exc}", reply_markup=build_main_menu())
 
 
+def verify_startup_dependencies():
+    try:
+        response = requests.get(f"{BACKEND_BASE_URL.rstrip('/')}/", timeout=10)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise RuntimeError(
+            f"Backend is not reachable at {BACKEND_BASE_URL}. Start the backend first. Details: {exc}"
+        ) from exc
+
+    try:
+        with socket.create_connection((TELEGRAM_API_HOST, TELEGRAM_API_PORT), timeout=10):
+            pass
+    except OSError as exc:
+        raise RuntimeError(
+            "Telegram is blocked from this machine. "
+            f"Could not open a connection to {TELEGRAM_API_HOST}:{TELEGRAM_API_PORT}. "
+            f"Details: {exc}"
+        ) from exc
+
+
 def main():
     if not BOT_TOKEN:
         raise RuntimeError("TELEGRAM_BOT_TOKEN is not set.")
+
+    verify_startup_dependencies()
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 

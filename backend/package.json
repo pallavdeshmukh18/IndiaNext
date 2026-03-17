@@ -4,8 +4,11 @@
   "description": "Scamurai backend service",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js",
+    "dev": "nodemon --signal SIGTERM start-stack.js",
+    "start": "node start-stack.js",
+    "server:dev": "nodemon server.js",
+    "server:start": "node server.js",
+    "bot:start": "python telebot.py",
     "legacy:dev": "nodemon index.js",
     "legacy:start": "node index.js"
   },
