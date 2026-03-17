@@ -10,12 +10,23 @@ async function request(path, { method = 'GET', token, body, signal } = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-    signal
-  });
+  let response;
+
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal
+    });
+  } catch (error) {
+    const isAbort = error?.name === 'AbortError';
+    if (isAbort) {
+      throw new Error('Request timed out before the backend finished responding.');
+    }
+
+    throw new Error(`Could not reach backend at ${BASE_URL}. Check that the backend is running and the API base URL is correct.`);
+  }
 
   const raw = await response.text();
   let data = null;
@@ -122,11 +133,12 @@ export const threatApi = {
     });
   },
 
-  liveScreenAnalyze({ token, payload }) {
+  liveScreenAnalyze({ token, payload, signal }) {
     return request('/threats/live-screen-analyze', {
       method: 'POST',
       token,
-      body: payload
+      body: payload,
+      signal
     });
   }
 };
