@@ -11,6 +11,8 @@ import HistoryPage from './pages/history';
 import AlertsPage from './pages/alerts';
 import Inbox from './pages/inbox';
 import GoogleCallback from './pages/googleCallback';
+import AuthSuccess from './pages/authSuccess';
+import AuthError from './pages/authError';
 import LoadingScreen from './components/LoadingScreen';
 import { authApi } from './lib/api';
 import { clearSession, loadSession, saveSession } from './lib/session';
@@ -72,9 +74,9 @@ function App() {
   return (
     <>
       {appState !== 'done' && (
-        <LoadingScreen 
+        <LoadingScreen
           onFadeStart={() => setAppState('fading')}
-          onComplete={() => setAppState('done')} 
+          onComplete={() => setAppState('done')}
         />
       )}
       <div className={`app-content ${appState === 'loading' ? 'is-loading' : appState === 'fading' ? 'is-fading' : 'is-done'}`}>
@@ -105,6 +107,14 @@ function App() {
               <Route
                 path="/auth/google/callback"
                 element={<GoogleCallback onComplete={handleGoogleOAuthCallback} />}
+              />
+              <Route
+                path="/auth-success"
+                element={<AuthSuccess onComplete={handleGoogleOAuthCallback} />}
+              />
+              <Route
+                path="/auth-error"
+                element={<AuthError />}
               />
             </Route>
 

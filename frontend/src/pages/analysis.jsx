@@ -13,7 +13,8 @@ import {
   Sparkles,
   Terminal,
   FileText,
-  Volume2
+  Volume2,
+  Layers
 } from 'lucide-react';
 import { threatApi } from '../lib/api';
 import { appendLocalScan, createMockAnalysis, normalizeAnalysisResult } from '../lib/mockData';
@@ -26,7 +27,8 @@ const channels = [
   { key: 'logText', label: 'Server Logs', icon: Terminal },
   { key: 'generatedText', label: 'Generated Text', icon: FileText },
   { key: 'imageUrl', label: 'Image', icon: Image },
-  { key: 'audioUrl', label: 'Audio URL', icon: Volume2 }
+  { key: 'audioUrl', label: 'Audio URL', icon: Volume2 },
+  { key: 'allChannels', label: 'Full Scan', icon: Layers }
 ];
 
 const channelLabels = Object.fromEntries(channels.map(({ key, label }) => [key, label]));
@@ -90,12 +92,26 @@ const Analysis = ({ session }) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [result, setResult] = React.useState(null);
   const [resultSource, setResultSource] = React.useState('live');
+  const [multiInputs, setMultiInputs] = React.useState({
+    messageText: '',
+    url: '',
+    promptInput: '',
+    logText: '',
+    generatedText: '',
+    imageUrl: '',
+    audioUrl: ''
+  });
+  const [multiResults, setMultiResults] = React.useState(null);
 
   React.useEffect(() => {
-    setInput(sampleInputs[inputType][0]);
-    setImageFile(null);
-    setImageInputMode('url');
+    if (inputType !== 'allChannels') {
+      setInput(sampleInputs[inputType][0]);
+      setImageFile(null);
+      setImageInputMode('url');
+    }
     setError('');
+    setResult(null);
+    setMultiResults(null);
   }, [inputType]);
 
   const imageFileName = imageFile?.name || '';
@@ -124,6 +140,34 @@ const Analysis = ({ session }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
+
+    if (inputType === 'allChannels') {
+      const activeEntries = Object.entries(multiInputs).filter(([, v]) => v.trim());
+      if (!activeEntries.length) {
+        setError('Fill in at least one field to run a full scan.');
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const settled = await Promise.allSettled(
+          activeEntries.map(([key, value]) =>
+            threatApi.analyze({ token: session?.token, payload: { [key]: value }, inputType: key })
+              .then(res => normalizeAnalysisResult(res, value, key))
+          )
+        );
+        const allRes = settled.map((s, idx) => {
+          const [key, value] = activeEntries[idx];
+          if (s.status === 'fulfilled') return s.value;
+          return normalizeAnalysisResult(createMockAnalysis({ input: value, inputType: key }), value, key);
+        });
+        setMultiResults(allRes);
+        setResult(null);
+        setResultSource(settled.every(s => s.status === 'rejected') ? 'mock' : 'live');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     if (inputType === 'imageUrl' && imageInputMode === 'file' && !imageFile) {
       setError('Upload an image before starting analysis.');
@@ -226,6 +270,25 @@ const Analysis = ({ session }) => {
           </div>
 
           <form className="analysis-form" onSubmit={handleSubmit}>
+            {inputType === 'allChannels' && (
+              <div className="analysis-fullscan-grid">
+                {channels.filter(c => c.key !== 'allChannels').map(({ key, label, icon: Icon }) => (
+                  <div key={key} className="analysis-fullscan-field">
+                    <label className="analysis-label">
+                      <Icon size={13} />
+                      {label}
+                    </label>
+                    <textarea
+                      className="analysis-textarea analysis-fullscan-textarea"
+                      value={multiInputs[key]}
+                      onChange={(e) => setMultiInputs(prev => ({ ...prev, [key]: e.target.value }))}
+                      placeholder={`Optional — paste ${label.toLowerCase()} content`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            {inputType !== 'allChannels' && (
             <div>
               <label className="analysis-label" htmlFor="analysis-input">
                 {inputType === 'imageUrl' ? 'Image source' : `Suspicious ${inputType === 'url' ? 'URL' : 'content'}`}
@@ -291,8 +354,8 @@ const Analysis = ({ session }) => {
                   : 'Longer submissions are supported, but concise payloads make the decision trace easier to review.'}
               </p>
             </div>
-
-            {inputType !== 'imageUrl' ? (
+            )}
+            {inputType !== 'allChannels' && (inputType !== 'imageUrl' ? (
               <div>
                 <label className="analysis-label">Quick samples</label>
                 <div className="analysis-chip-row">
@@ -327,7 +390,7 @@ const Analysis = ({ session }) => {
                   ))}
                 </div>
               </>
-            )}
+            ))}
 
             {error ? <div className="empty-state">{error}</div> : null}
 
@@ -347,14 +410,42 @@ const Analysis = ({ session }) => {
               <h3>Decision trace</h3>
               <p className="workspace-muted">Verdict, risk score, indicators, and recommended action appear after each run.</p>
             </div>
-            {result ? (
+            {(result || multiResults) ? (
               <span className={`workspace-data-badge ${resultSource}`}>
                 {resultSource === 'live' ? 'Backend result' : 'Local simulation'}
               </span>
             ) : null}
           </div>
 
-          {result ? (
+          {multiResults ? (
+            <div className="analysis-multi-results">
+              {multiResults.map((res, i) => (
+                <div key={i} className="analysis-multi-result-item">
+                  <div className="analysis-result-header">
+                    <div>
+                      <strong>{channelLabels[res.inputType] || res.inputType}</strong>
+                      <span className="workspace-muted" style={{ marginLeft: '0.5rem' }}>{res.threatType}</span>
+                    </div>
+                    <span className={riskClassName(res.riskLevel)}>{res.riskLevel}</span>
+                  </div>
+                  <div className="analysis-score-grid" style={{ marginTop: '0.5rem', gridTemplateColumns: 'repeat(2, minmax(0,1fr))' }}>
+                    <div>
+                      <span className="workspace-muted">Risk score</span>
+                      <strong>{res.riskScore}</strong>
+                    </div>
+                    <div>
+                      <span className="workspace-muted">Confidence</span>
+                      <strong>{res.confidence}%</strong>
+                    </div>
+                  </div>
+                  <div className="analysis-meter-track" style={{ marginTop: '0.5rem' }}>
+                    <div className="analysis-meter-fill" style={{ width: `${Math.max(8, res.riskScore)}%` }}></div>
+                  </div>
+                  <p style={{ marginTop: '0.55rem', fontSize: '0.88rem', lineHeight: '1.5', color: 'rgba(245,245,247,0.85)' }}>{res.explanation}</p>
+                </div>
+              ))}
+            </div>
+          ) : result ? (
             <>
               <div className="analysis-score-card">
                 <div className="analysis-result-header">
