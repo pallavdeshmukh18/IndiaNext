@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Feather } from "@expo/vector-icons";
 import {
   KeyboardAvoidingView,
+  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -13,10 +14,18 @@ import ActionButton from "../components/ActionButton";
 import GlassCard from "../components/GlassCard";
 import ScreenFrame from "../components/ScreenFrame";
 import { useAuth } from "../context/AuthContext";
+import { authApi } from "../lib/api";
+import {
+  GOOGLE_OAUTH_CALLBACK_PATH,
+  clearWebGoogleOAuthCallbackParams,
+  getGoogleOAuthCallbackUrl,
+  getWebGoogleOAuthCallbackParams,
+  parseGoogleOAuthCallbackUrl,
+} from "../lib/googleOAuthFlow";
 import { colors, fonts, radius, spacing, typography } from "../theme";
 
 export default function SignupScreen({ navigation }) {
-  const { signup } = useAuth();
+  const { signup, updateSession } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,6 +59,105 @@ export default function SignupScreen({ navigation }) {
       setIsSubmitting(false);
     }
   };
+
+  const applyGoogleAuthCallback = useCallback(
+    async (params = {}) => {
+      const status = params.status;
+      const flow = String(params.flow || "auth").toLowerCase();
+
+      if (flow !== "auth") {
+        return false;
+      }
+
+      if (status === "error") {
+        setError(params.message || "Google sign-up failed.");
+        return true;
+      }
+
+      if (status !== "success") {
+        return false;
+      }
+
+      if (!params.token || !params.email) {
+        setError("Google sign-up completed, but session details were missing.");
+        return true;
+      }
+
+      await updateSession({
+        token: params.token,
+        userId: params.userId,
+        email: params.email,
+        name: params.name || params.email.split("@")[0],
+        authProvider: params.authProvider || "google",
+        avatar: params.avatar || "",
+        gmailConnected: true,
+      });
+
+      return true;
+    },
+    [updateSession]
+  );
+
+  const handleGoogleSignup = useCallback(async () => {
+    try {
+      setError("");
+
+      const callbackUrl = getGoogleOAuthCallbackUrl();
+      const connectUrl = authApi.getGoogleSignInUrl(callbackUrl);
+
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        window.location.assign(connectUrl);
+        return;
+      }
+
+      await Linking.openURL(connectUrl);
+    } catch (_error) {
+      setError("Unable to start Google sign-up.");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "web") {
+      return;
+    }
+
+    const callbackParams = getWebGoogleOAuthCallbackParams();
+
+    if (!callbackParams) {
+      return;
+    }
+
+    applyGoogleAuthCallback(callbackParams).finally(() => {
+      clearWebGoogleOAuthCallbackParams();
+    });
+  }, [applyGoogleAuthCallback]);
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      return;
+    }
+
+    const handleOAuthUrl = ({ url }) => {
+      const parsed = parseGoogleOAuthCallbackUrl(url);
+
+      if (!parsed || parsed.path !== GOOGLE_OAUTH_CALLBACK_PATH) {
+        return;
+      }
+
+      applyGoogleAuthCallback(parsed.params);
+    };
+
+    const subscription = Linking.addEventListener("url", handleOAuthUrl);
+    Linking.getInitialURL()
+      .then((initialUrl) => {
+        if (initialUrl) {
+          handleOAuthUrl({ url: initialUrl });
+        }
+      })
+      .catch(() => {});
+
+    return () => subscription.remove();
+  }, [applyGoogleAuthCallback]);
 
   return (
     <ScreenFrame>
@@ -144,7 +252,7 @@ export default function SignupScreen({ navigation }) {
             <ActionButton
               label="Continue with Google"
               variant="ghost"
-              onPress={() => setError("Google sign-in is not configured for mobile yet. Use email and password.")}
+              onPress={handleGoogleSignup}
               disabled={isSubmitting}
             />
           </View>

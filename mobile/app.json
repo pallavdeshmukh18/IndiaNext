@@ -20,13 +20,19 @@
       "adaptiveIcon": {
         "backgroundColor": "#f4f6ef"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.nisa012.indianextmobile"
     },
     "web": {
       "bundler": "metro"
     },
     "plugins": [
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "335edead-05e0-4f0c-a25d-348ed7aa6aab"
+      }
+    }
   }
 }

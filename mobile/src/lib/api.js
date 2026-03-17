@@ -127,12 +127,26 @@ export const authApi = {
     });
   },
 
-  getGoogleConnectUrl(redirectAfterAuth) {
-    const base = `${BACKEND_BASE_URL}/auth/google`;
+  getGoogleOAuthUrl({ redirectAfterAuth, flow } = {}) {
+    const url = new URL(`${BACKEND_BASE_URL}/auth/google`);
+
     if (redirectAfterAuth) {
-      return `${base}?redirect=${encodeURIComponent(redirectAfterAuth)}`;
+      url.searchParams.set("redirect", redirectAfterAuth);
     }
-    return base;
+
+    if (flow) {
+      url.searchParams.set("flow", flow);
+    }
+
+    return url.toString();
+  },
+
+  getGoogleSignInUrl(redirectAfterAuth) {
+    return this.getGoogleOAuthUrl({ redirectAfterAuth, flow: "auth" });
+  },
+
+  getGoogleConnectUrl(redirectAfterAuth) {
+    return this.getGoogleOAuthUrl({ redirectAfterAuth, flow: "gmail" });
   },
 };
 
