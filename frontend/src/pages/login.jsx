@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShieldAlert } from 'lucide-react';
 import AuthCarousel from '../components/AuthCarousel';
 import { authApi } from '../lib/api';
+import brandLogo from '../assets/images/Screenshot_2026-03-17_at_5.21.08_AM-removebg-preview.png';
 import './AuthPages.css';
 
 const Login = ({ onLogin, onGoogleAuth }) => {
@@ -46,12 +46,12 @@ const Login = ({ onLogin, onGoogleAuth }) => {
         <div className="auth-card">
           <div className="auth-header">
             <Link to="/" className="auth-logo">
-              <ShieldAlert size={20} />
+              <img src={brandLogo} alt="Krypton logo" className="auth-logo-mark" />
               <span>Krypton</span>
-            </Link>
+            </Link >
             <h2>Welcome back</h2>
             <p>Log in to continue securing your workspace.</p>
-          </div>
+          </div >
 
           <form className="auth-form" onSubmit={handleSubmit}>
             {error && <div className="auth-error">{error}</div>}
@@ -105,9 +105,9 @@ const Login = ({ onLogin, onGoogleAuth }) => {
           <p className="auth-footer">
             New to Krypton? <Link to="/signup" className="auth-link">Create an account</Link>
           </p>
-        </div>
-      </section>
-    </div>
+        </div >
+      </section >
+    </div >
   );
 };
 

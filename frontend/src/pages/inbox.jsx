@@ -102,7 +102,7 @@ const Inbox = ({ session }) => {
           <div className="workspace-data-badge live">Real-time Integration</div>
           <h2>Protected Inbox</h2>
           <p>
-            Scamurai scans the latest Gmail messages, scores phishing risk, and explains the verdict directly beside each message.
+            Krypton scans the latest Gmail messages, scores phishing risk, and explains the verdict directly beside each message.
           </p>
         </div>
       </section>
@@ -190,7 +190,7 @@ const Inbox = ({ session }) => {
                   <div className="analysis-result-header">
                     <div>
                       <h3>Threat Analysis</h3>
-                      <p className="workspace-muted">Scamurai detected potential risks in this message.</p>
+                      <p className="workspace-muted">Krypton detected potential risks in this message.</p>
                     </div>
                     <ShieldAlert
                       size={18}

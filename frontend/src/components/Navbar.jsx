@@ -1,15 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard } from 'lucide-react';
+import brandLogo from '../assets/images/Screenshot_2026-03-17_at_5.21.08_AM-removebg-preview.png';
 import './Navbar.css';
 
 const Navbar = ({ session }) => {
     return (
         <nav className="navbar-container">
             <Link to="/" className="navbar-logo">
-                <ShieldAlert size={24} className="logo-icon" />
+                <img src={brandLogo} alt="Krypton logo" className="logo-icon" />
                 <span>Krypton</span>
-            </Link>
+            </Link >
 
             <div className="navbar-links glass-pill">
                 <a href="#how-it-works">How it Works</a>
@@ -37,7 +38,7 @@ const Navbar = ({ session }) => {
                     </>
                 )}
             </div>
-        </nav>
+        </nav >
     );
 };
 

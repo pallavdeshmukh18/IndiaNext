@@ -107,7 +107,7 @@ const HistoryPage = ({ session }) => {
         </div>
 
         <div className="history-toolbar">
-          <div>
+          <div className="history-filter-field">
             <label className="history-label" htmlFor="history-search">Search</label>
             <input
               id="history-search"
@@ -119,7 +119,7 @@ const HistoryPage = ({ session }) => {
             />
           </div>
 
-          <div>
+          <div className="history-filter-field">
             <label className="history-label" htmlFor="history-risk">Risk</label>
             <select id="history-risk" className="history-select" value={riskFilter} onChange={(event) => setRiskFilter(event.target.value)}>
               <option value="ALL">All levels</option>
@@ -129,7 +129,7 @@ const HistoryPage = ({ session }) => {
             </select>
           </div>
 
-          <div>
+          <div className="history-filter-field">
             <label className="history-label" htmlFor="history-channel">Channel</label>
             <select id="history-channel" className="history-select" value={channelFilter} onChange={(event) => setChannelFilter(event.target.value)}>
               <option value="ALL">All channels</option>

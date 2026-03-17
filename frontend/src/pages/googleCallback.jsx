@@ -32,7 +32,7 @@ const GoogleCallback = ({ onComplete }) => {
         <div className="auth-card">
           <div className="auth-header">
             <h2>{error ? 'Authorization failed' : 'Connecting your inbox'}</h2>
-            <p>{error || 'Finishing Google authorization and preparing your Scamurai inbox.'}</p>
+            <p>{error || 'Finishing Google authorization and preparing your Krypton inbox.'}</p>
           </div>
         </div>
       </section>

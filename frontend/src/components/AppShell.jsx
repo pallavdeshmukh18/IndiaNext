@@ -7,10 +7,10 @@ import {
   LayoutDashboard,
   LogOut,
   Mail,
-  ShieldAlert,
   Sparkles,
   History as HistoryIcon
 } from 'lucide-react';
+import brandLogo from '../assets/images/Screenshot_2026-03-17_at_5.21.08_AM-removebg-preview.png';
 import './AppShell.css';
 
 const navItems = [
@@ -99,7 +99,7 @@ const AppShell = ({ session, onLogout }) => {
       <aside className="workspace-sidebar glass-panel">
         <Link to="/" className="workspace-brand">
           <span className="workspace-brand-icon">
-            <ShieldAlert size={20} />
+            <img src={brandLogo} alt="Krypton logo" className="workspace-brand-logo" />
           </span>
           <span className="workspace-brand-copy">
             <strong>Krypton</strong>
@@ -150,13 +150,13 @@ const AppShell = ({ session, onLogout }) => {
               <BellRing size={18} />
               <span className="workspace-header-badge"></span>
             </Link>
-            
+
             <div className="workspace-user-dropdown">
               <div className="workspace-avatar-small">{getInitials(session)}</div>
               <span>{session?.name?.split(' ')[0] || 'Analyst'}</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </div>
-            
+
             <button className="workspace-header-icon-btn workspace-logout-icon" onClick={onLogout} title="Sign Out">
               <LogOut size={16} />
             </button>

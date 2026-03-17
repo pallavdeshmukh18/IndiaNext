@@ -29,6 +29,13 @@
     color: var(--text-main);
 }
 
+.footer-logo-mark {
+    width: 1.35rem;
+    height: 1.35rem;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
 .footer-copyright {
     font-size: 0.85rem;
     color: var(--text-muted);

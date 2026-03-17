@@ -1,5 +1,6 @@
 import React from 'react';
-import { ShieldAlert, Github } from 'lucide-react';
+import { Github } from 'lucide-react';
+import brandLogo from '../assets/images/Screenshot_2026-03-17_at_5.21.08_AM-removebg-preview.png';
 import './Footer.css';
 
 const Footer = () => {
@@ -8,13 +9,13 @@ const Footer = () => {
             <div className="footer-content">
                 <div className="footer-brand">
                     <div className="footer-logo">
-                        <ShieldAlert size={20} className="text-purple" />
+                        <img src={brandLogo} alt="Krypton logo" className="footer-logo-mark" />
                         <span>Krypton</span>
-                    </div>
+                    </div >
                     <p className="footer-copyright">
                         © {new Date().getFullYear()} Krypton. All rights reserved.
                     </p>
-                </div>
+                </div >
 
                 <div className="footer-links">
                     <div className="link-column">
@@ -33,8 +34,8 @@ const Footer = () => {
                         </a>
                     </div>
                 </div>
-            </div>
-        </footer>
+            </div >
+        </footer >
     );
 };
 

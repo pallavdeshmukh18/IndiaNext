@@ -51,21 +51,21 @@
 }
 
 .arch-node.internal.highlight {
-    background: rgba(36, 146, 255, 0.15);
-    border-color: rgba(36, 146, 255, 0.4);
-    box-shadow: 0 0 15px rgba(36, 146, 255, 0.2);
+    background: rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
 }
 
 .core-box {
     padding: 2rem;
     background: #0d0d0d;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.1);
 }
 
 .core-title {
     text-align: center;
-    color: #60a5fa;
+    color: #c084fc;
     font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 2rem;
@@ -126,8 +126,8 @@
     left: 0;
     height: 100%;
     width: 20px;
-    background: #60a5fa;
-    box-shadow: 0 0 10px #60a5fa, 0 0 20px #60a5fa;
+    background: #c084fc;
+    box-shadow: 0 0 10px #c084fc, 0 0 20px #c084fc;
     animation: flowLine 2s linear infinite;
 }
 

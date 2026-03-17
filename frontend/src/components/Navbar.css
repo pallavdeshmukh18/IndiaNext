@@ -26,7 +26,10 @@
 }
 
 .logo-icon {
-    color: #ffffff;
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex-shrink: 0;
 }
 
 .navbar-links {
