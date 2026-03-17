@@ -16,7 +16,22 @@ const scanRoutes = require("./routes/scan");
 const threatRoutes = require("./routes/threatRoutes");
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = Number(process.env.PORT) || 8000;
+const canStartWithoutDb = process.env.ALLOW_START_WITHOUT_DB === "true"
+  || process.env.NODE_ENV !== "production";
+
+let serverStarted = false;
+
+function startServer() {
+  if (serverStarted) {
+    return;
+  }
+
+  serverStarted = true;
+  app.listen(PORT, () => {
+    console.log(`Scamurai backend running on http://localhost:${PORT}`);
+  });
+}
 
 app.use(cors());
 app.use(express.json({ limit: "12mb" }));
@@ -26,9 +41,9 @@ app.post("/whatsapp", express.urlencoded({ extended: false }), async (req, res) 
     const botResponse = await handleIncomingWhatsappMessage(req.body);
     const sentInteractive = botResponse.interactive
       ? await sendInteractiveMessage({
-          to: req.body.From,
-          interactive: botResponse.interactive,
-        })
+        to: req.body.From,
+        interactive: botResponse.interactive,
+      })
       : false;
     const twiml = new twilio.twiml.MessagingResponse();
 
@@ -78,14 +93,18 @@ mongoose
   })
   .then(() => {
     console.log("MongoDB connected");
-    app.listen(PORT, () => {
-      console.log(`Scamurai backend running on port ${PORT}`);
-    });
+    startServer();
   })
   .catch((error) => {
     console.error("Failed to connect to MongoDB:", error.message);
     if (error.message.includes("querySrv")) {
       console.error("MongoDB Atlas SRV lookup failed. Use a non-SRV mongodb:// replica set URI in backend/.env.");
     }
+    if (canStartWithoutDb) {
+      console.warn("Starting without MongoDB connection (degraded mode). Set ALLOW_START_WITHOUT_DB=false to keep fail-fast behavior.");
+      startServer();
+      return;
+    }
+
     process.exit(1);
   });

@@ -11,11 +11,12 @@ const SCOPES = [
 const tokenStore = new Map();
 let latestUserId = null;
 
-async function persistUserGmailTokens(email, tokens) {
+async function persistUserGmailTokens(userId, email, tokens) {
   try {
+    const normalizedEmail = String(email || "").toLowerCase();
     await User.findOneAndUpdate(
-      { email: email.toLowerCase() },
-      { $set: { gmailEmail: email.toLowerCase(), gmailTokens: tokens } },
+      { _id: userId },
+      { $set: { gmailEmail: normalizedEmail || null, gmailTokens: tokens } },
       { upsert: false }
     );
   } catch (err) {
@@ -24,10 +25,19 @@ async function persistUserGmailTokens(email, tokens) {
   }
 }
 
-async function loadGmailTokensFromDb(email) {
+async function loadGmailTokensFromDb(identifier) {
   try {
+    const value = String(identifier || "").trim();
+    if (!value) {
+      return null;
+    }
+
+    const query = value.includes("@")
+      ? { email: value.toLowerCase() }
+      : { _id: value };
+
     const user = await User.findOne(
-      { email: email.toLowerCase() },
+      query,
       "gmailTokens"
     ).lean();
     return user?.gmailTokens || null;
@@ -54,10 +64,22 @@ function getAuthUrl(state) {
   });
 }
 
-function storeUserTokens(userId, tokens) {
-  tokenStore.set(userId, tokens);
-  latestUserId = userId;
-  persistUserGmailTokens(userId, tokens).catch(() => {});
+function storeUserTokens(userId, tokens, email) {
+  const normalizedUserId = String(userId || "").trim();
+  const normalizedEmail = String(email || "").toLowerCase().trim();
+
+  if (normalizedUserId) {
+    tokenStore.set(normalizedUserId, tokens);
+    latestUserId = normalizedUserId;
+  }
+
+  if (normalizedEmail) {
+    tokenStore.set(normalizedEmail, tokens);
+  }
+
+  if (normalizedUserId) {
+    persistUserGmailTokens(normalizedUserId, normalizedEmail, tokens).catch(() => { });
+  }
 }
 
 function getUserTokens(userId) {

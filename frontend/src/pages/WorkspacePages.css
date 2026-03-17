@@ -1061,7 +1061,7 @@
     grid-template-columns: 1fr;
   }
 
-  .history-toolbar > :first-child {
+  .history-toolbar> :first-child {
     grid-column: 1 / -1;
   }
 }
