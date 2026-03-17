@@ -1,5 +1,7 @@
 import { NativeModules, Platform } from "react-native";
 
+const PRODUCTION_BACKEND_BASE_URL = "https://indianext.onrender.com";
+
 function trimTrailingSlash(value) {
   return String(value || "").replace(/\/+$/, "");
 }
@@ -27,6 +29,12 @@ function resolveBackendBaseUrl() {
 
   if (explicitBaseUrl) {
     return explicitBaseUrl.replace(/\/api$/, "");
+  }
+
+  const isDevelopment = typeof __DEV__ !== "undefined" && __DEV__;
+
+  if (!isDevelopment) {
+    return PRODUCTION_BACKEND_BASE_URL;
   }
 
   const host = getMetroHost();
@@ -127,12 +135,26 @@ export const authApi = {
     });
   },
 
-  getGoogleConnectUrl(redirectAfterAuth) {
-    const base = `${BACKEND_BASE_URL}/auth/google`;
+  getGoogleOAuthUrl({ redirectAfterAuth, flow } = {}) {
+    const url = new URL(`${BACKEND_BASE_URL}/auth/google`);
+
     if (redirectAfterAuth) {
-      return `${base}?redirect=${encodeURIComponent(redirectAfterAuth)}`;
+      url.searchParams.set("redirect", redirectAfterAuth);
     }
-    return base;
+
+    if (flow) {
+      url.searchParams.set("flow", flow);
+    }
+
+    return url.toString();
+  },
+
+  getGoogleSignInUrl(redirectAfterAuth) {
+    return this.getGoogleOAuthUrl({ redirectAfterAuth, flow: "auth" });
+  },
+
+  getGoogleConnectUrl(redirectAfterAuth) {
+    return this.getGoogleOAuthUrl({ redirectAfterAuth, flow: "gmail" });
   },
 };
 

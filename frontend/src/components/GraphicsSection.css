@@ -84,13 +84,7 @@
 }
 
 .glow-effect {
-    position: absolute;
-    width: 250px;
-    height: 250px;
-    background: radial-gradient(circle, rgba(133, 141, 216, 0.28) 0%, rgba(120, 128, 186, 0.14) 42%, rgba(0, 0, 0, 0) 72%);
-    filter: blur(26px);
-    z-index: 1;
-    animation: glowPulse 4s ease-in-out infinite alternate;
+    display: none;
 }
 
 /* Animations */

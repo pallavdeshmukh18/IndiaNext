@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import GlassCard from "../components/GlassCard";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAuth } from "../context/AuthContext";
@@ -71,85 +71,12 @@ export default function InboxScreen() {
 
   const handleConnectGmail = useCallback(async () => {
     try {
-      // Build a callback URL the backend will redirect to after OAuth.
-      // On native this is a deep link (indianext://auth-callback).
-      // On web we open a new tab and rely on the visibilitychange listener.
-      let connectUrl;
-      if (Platform.OS === "web") {
-        connectUrl = authApi.getGoogleConnectUrl();
-        setNotice("Complete Google authorization in the new tab, then return here — inbox will refresh automatically.");
-        if (typeof window !== "undefined") {
-          window.open(connectUrl, "_blank", "noopener");
-        } else {
-          await Linking.openURL(connectUrl);
-        }
-      } else {
-        const callbackUrl = "indianext://auth-callback";
-        connectUrl = authApi.getGoogleConnectUrl(callbackUrl);
-        setNotice("Complete Google authorization in the browser, then the app will refresh automatically.");
-        await Linking.openURL(connectUrl);
-      }
+      setNotice("Complete Google authorization in the browser, then return here and tap Refresh.");
+      await Linking.openURL(authApi.getGoogleConnectUrl());
     } catch (_error) {
       setError("Unable to open the Gmail connection flow.");
     }
   }, []);
-
-  // --- Native: listen for deep-link callback indianext://auth-callback?status=success ---
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-
-    const subscription = Linking.addEventListener("url", ({ url }) => {
-      if (!url) return;
-      try {
-        if (!url.startsWith("indianext://auth-callback")) {
-          return;
-        }
-
-        const statusMatch = /[?&]status=([^&]+)/.exec(url);
-        const status = statusMatch ? decodeURIComponent(statusMatch[1]) : null;
-
-        if (status === "success") {
-          setNotice("");
-          loadInbox();
-          return;
-        }
-
-        if (status === "error") {
-          const messageMatch = /[?&]message=([^&]+)/.exec(url);
-          const message = messageMatch
-            ? decodeURIComponent(messageMatch[1].replace(/\+/g, " "))
-            : "Google authorization failed.";
-          setError(message);
-        }
-      } catch (_e) { /* ignore parse errors */ }
-    });
-
-    return () => subscription.remove();
-  }, [loadInbox]);
-
-  // --- Web: auto-refresh when the user tabs back after completing OAuth ---
-  const pendingOAuthRef = useRef(false);
-  useEffect(() => {
-    if (Platform.OS !== "web" || typeof document === "undefined") return;
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible" && pendingOAuthRef.current) {
-        pendingOAuthRef.current = false;
-        setNotice("");
-        loadInbox();
-      }
-    };
-
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [loadInbox]);
-
-  // Mark that we're waiting for an OAuth return whenever the notice is set
-  useEffect(() => {
-    if (notice && Platform.OS === "web") {
-      pendingOAuthRef.current = true;
-    }
-  }, [notice]);
 
   return (
     <WorkspaceShell routeName="Inbox">
@@ -183,7 +110,7 @@ export default function InboxScreen() {
             <Text style={styles.errorTitle}>Gmail access needed</Text>
             <Text style={styles.errorText}>{error}</Text>
             <Text style={styles.errorHint}>
-              Tap "Connect Gmail" to authorise access. The inbox will reload automatically once the connection is established.
+              The current backend OAuth flow completes in the browser and stores Gmail tokens server-side for this email address.
             </Text>
             <Pressable style={styles.primaryChip} onPress={handleConnectGmail}>
               <Text style={styles.primaryChipText}>Connect Gmail</Text>
