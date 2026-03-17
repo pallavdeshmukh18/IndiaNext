@@ -33,18 +33,30 @@ const Hero = () => {
                 transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
                 className="hero-actions"
             >
-                <button className="btn-primary flex-center">
+                <a href="/browser-extension.zip" download className="btn-primary flex-center" style={{ textDecoration: 'none' }}>
                     <Puzzle size={16} className="mr-2" /> Download Extension
-                </button>
-                <button className="btn-secondary glass-pill flex-center">
+                </a>
+                <a href="/app-release.apk" download className="btn-secondary glass-pill flex-center" style={{ textDecoration: 'none' }}>
                     <Smartphone size={16} className="mr-2" /> Download Mobile APK
-                </button>
-                <button className="btn-secondary glass-pill flex-center">
+                </a>
+                <a 
+                    href="https://t.me/krypton_security_bot" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn-secondary glass-pill flex-center" 
+                    style={{ textDecoration: 'none' }}
+                >
                     <Send size={16} className="mr-2" /> Telegram Bot
-                </button>
-                <button className="btn-secondary glass-pill flex-center">
+                </a>
+                <a 
+                    href="https://api.whatsapp.com/send/?phone=%2B14155238886&text=join+joy-use&type=phone_number&app_absent=0" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn-secondary glass-pill flex-center" 
+                    style={{ textDecoration: 'none' }}
+                >
                     <MessageCircle size={16} className="mr-2" /> WhatsApp Bot
-                </button>
+                </a>
             </motion.div>
         </section>
     );

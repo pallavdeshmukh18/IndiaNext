@@ -7,9 +7,9 @@ import { Link } from 'react-router-dom';
 import './LandingPage.css';
 
 const overviewStats = [
-  { value: '05', label: 'Protected channels' },
-  { value: '24/7', label: 'Continuous verdict loop' },
-  { value: '<120ms', label: 'Typical response path' }
+  { value: '4+', label: 'Supported Channels (Web, Ext, Bots)' },
+  { value: 'XAI', label: 'Explainable Reasoning Engine' },
+  { value: 'OCR', label: 'Screenshot Threat Detection' },
 ];
 
 const overviewNotes = [
@@ -27,74 +27,79 @@ const workflowHighlights = [
 const protocolSteps = [
   {
     id: '01',
-    title: 'Input and local encryption',
-    description:
-      'Before payloads leave the device, the signal is normalized and sealed so raw user context stays private.'
+    title: 'Multi-Channel Submission',
+    description: 'Users submit suspicious emails, URLs, text, or screenshots via Web, Chrome Extension, Telegram, or WhatsApp.',
   },
   {
     id: '02',
-    title: 'Identity dissolve via mesh routing',
-    description:
-      'Sessions are fragmented across adaptive routes so no single path can be traced back to the origin.'
+    title: 'ML Threat Analysis & OCR',
+    description: 'Python ML microservice analyzes keywords, domains, and urgency. OCR extracts text from image-based scams.',
   },
   {
     id: '03',
-    title: 'Threat filtering and behavioral scoring',
-    description:
-      'Classifier layers inspect tone, links, prompts, and anomalies before a case ever reaches the user queue.'
+    title: 'Explainable Verdict',
+    description: 'System generates a human-readable explanation of why a threat was flagged and its associated confidence score.',
   },
   {
     id: '04',
-    title: 'Destination delivery',
-    description:
-      'Only the clean response moves forward, with verdicts, rationale, and response guidance attached.'
-  }
+    title: 'Risk Scoring & Mitigation',
+    description: 'Threat gets assigned a severity (High/Med/Low) alongside practical recommended actions for the user.',
+  },
 ];
 
 const threatSignals = [
   {
-    id: '01',
-    label: 'Email infiltration',
-    surface: 'Mail pipeline',
-    value: 'Spear-phishing, invoice fraud, impersonation trails',
-    note: 'Headers, content, and intent analyzed together',
-    icon: ScanSearch
+    id: 'T01',
+    label: 'Phishing Emails',
+    surface: 'GMAIL / OUTLOOK',
+    value: 'Detects urgency language, suspicious domain patterns, and embedded malicious links directly in the browser.',
+    note: 'Evaluated pre-click.',
+    icon: ShieldCheck,
   },
   {
-    id: '02',
-    label: 'Prompt defense',
-    surface: 'LLM interface',
-    value: 'Instruction override, jailbreak patterns, extraction attempts',
-    note: 'Useful when LLM-facing interfaces need hardening',
-    icon: ShieldCheck
+    id: 'T02',
+    label: 'Malicious URLs',
+    surface: 'BROWSER / CHAT',
+    value: 'Analyzes routing and domain reputation before the user visits the destination.',
+    note: 'Blocks zero-day domains.',
+    icon: Waypoints,
   },
   {
-    id: '03',
-    label: 'Session routing',
-    surface: 'Traffic control',
-    value: 'Adaptive pathing, local sealing, analyst-grade telemetry',
-    note: 'Built to keep source context quiet while decisions move fast',
-    icon: Waypoints
-  }
+    id: 'T03',
+    label: 'Prompt Injection',
+    surface: 'AI ASSISTANTS',
+    value: 'Identifies manipulation attempts and malicious instructions aimed at overriding system prompts.',
+    note: 'Secures LLM inputs.',
+    icon: ScanSearch,
+  },
+  {
+    id: 'T04',
+    label: 'Deceptive Screenshots',
+    surface: 'MESSAGING BOTS',
+    value: 'OCR pipeline extracts and analyzes text from images forwarded to WhatsApp or Telegram bots.',
+    note: 'Catches image-based scams.',
+    icon: ScanSearch,
+  },
 ];
 
 const explainabilityPoints = [
-  'Each verdict includes indicators, confidence, and why the model escalated.',
-  'Operators get a next step, not just a score.',
-  'Archived detections stay searchable with source context preserved.'
+  'Why the threat was flagged (e.g., "urgency language detected").',
+  'How confident the system is in its prediction (0-100%).',
+  'What exact evidence was used (suspicious domains, keywords).',
+  'What action should be taken next (e.g., verify sender identity).',
 ];
 
 const consoleMetrics = [
-  { label: 'High risk', value: '14' },
-  { label: 'Medium', value: '29' },
-  { label: 'Low', value: '108' }
+  { label: 'High Risk', value: '14' },
+  { label: 'Med Risk', value: '42' },
+  { label: 'Low Risk', value: '189' },
 ];
 
 const activityRows = [
-  { incident: 'Invoice phishing attempt', channel: 'Mail', confidence: '96%', status: 'Escalated' },
-  { incident: 'Prompt extraction sequence', channel: 'Prompt', confidence: '91%', status: 'Contained' },
-  { incident: 'Credential lure landing page', channel: 'URL', confidence: '94%', status: 'Blocked' },
-  { incident: 'Spoofed support message', channel: 'Chat', confidence: '88%', status: 'Reviewing' }
+  { incident: 'Phishing Attempt', channel: 'Gmail Extension', confidence: '92%', status: 'Escalated' },
+  { incident: 'Suspicious Link', channel: 'WhatsApp Bot', confidence: '88%', status: 'Blocked' },
+  { incident: 'Prompt Manipulation', channel: 'Web Dashboard', confidence: '75%', status: 'Reviewing' },
+  { incident: 'Deceptive Screenshot', channel: 'Telegram Bot', confidence: '95%', status: 'Contained' },
 ];
 
 const docsItems = [
