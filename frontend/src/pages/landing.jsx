@@ -192,229 +192,171 @@ const Landing = () => {
       <Hero />
       <GraphicsSection />
 
-      <div className="landing-page">
-        <motion.section className="landing-overview-band" {...reveal}>
-          <div className="landing-overview-copy">
-            <p className="landing-panel-label">DEPLOYED SIGNAL LAYER</p>
-            <h2>A calmer front-end for high-stakes threat decisions.</h2>
-            <p className="landing-panel-copy">
-              The product surface below the hero now behaves like a real launch site: concise product framing,
-              clearer evidence of what the system does, and a path from curiosity to console access.
-            </p>
-          </div>
-
-          <div className="landing-overview-meta">
-            <div className="landing-stat-grid">
-              {overviewStats.map((item) => (
-                <div key={item.label} className="landing-stat-card">
-                  <strong>{item.value}</strong>
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="landing-note-list">
-              {overviewNotes.map((note) => (
-                <div key={note} className="landing-note-item">
-                  <span className="landing-note-dot" />
-                  <p>{note}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.section>
-
-        <section className="landing-system-grid" id="how-it-works">
-          <motion.article className="landing-panel landing-globe-panel" {...reveal}>
-            <div className="landing-panel-header">
-              <p className="landing-panel-label">SYSTEM FLOW</p>
-              <span className="landing-panel-code">01</span>
-            </div>
-
-            <h2>Traffic enters sealed, leaves classified.</h2>
-            <p className="landing-panel-copy">
-              Krypton reduces what an attacker can infer by sealing local context first, fragmenting routes second,
-              and attaching explainable verdicts before the analyst ever touches the case.
-            </p>
-
-            <div className="landing-bullet-list">
-              {workflowHighlights.map((item) => (
-                <div key={item} className="landing-bullet-item">
-                  <span className="landing-note-dot" />
-                  <p>{item}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="landing-globe-stage">
-              <WireGlobe />
-              <div className="landing-panel-chip">Mesh route active</div>
-            </div>
-          </motion.article>
-
-          <motion.aside className="landing-panel landing-protocol-panel" {...reveal}>
-            <div className="landing-aside-intro">
-              <p className="landing-panel-label">PROTOCOL</p>
-              <p>Each step keeps the signal useful to operators and quieter to everyone else.</p>
-            </div>
-
-            {protocolSteps.map((step) => (
-              <div key={step.id} className="landing-protocol-step">
-                <span className="landing-step-id">{step.id}</span>
-                <div>
-                  <h3>{step.title}</h3>
-                  <p>{step.description}</p>
-                </div>
-              </div>
-            ))}
-          </motion.aside>
-        </section>
-
-        <motion.section className="landing-threat-row" id="threat-detection" {...reveal}>
-          <div className="landing-row-header">
-            <div>
-              <p className="landing-panel-label">THREAT DETECTION</p>
-              <h2>Coverage that feels productized, not hypothetical.</h2>
-            </div>
-            <span>Behavioral filtering across the channels users actually touch.</span>
-          </div>
-
-          <div className="landing-threat-grid">
-            {threatSignals.map(({ id, label, surface, value, note, icon: Icon }, index) => (
-              <article key={label} className={`landing-threat-card${index === 0 ? ' is-featured' : ''}`}>
-                <div className="landing-threat-meta">
-                  <span className="landing-threat-index">{id}</span>
-                  <span className="landing-threat-surface">{surface}</span>
-                </div>
-                <span className="landing-threat-icon">
-                  <Icon size={18} />
-                </span>
-                <strong>{label}</strong>
-                <p>{value}</p>
-                <span className="landing-threat-note">{note}</span>
-              </article>
-            ))}
-          </div>
-        </motion.section>
-
-        <section className="landing-split-panel" id="explainable-ai">
-          <motion.article className="landing-panel landing-cta-panel" {...reveal}>
-            <p className="landing-panel-label">EXPLAINABLE AI</p>
-            <h2>Reasoning stays visible, even when response is fast.</h2>
-            <p className="landing-panel-copy">
-              The interface keeps confidence, indicators, and operator guidance close together so decisions feel
-              reviewable instead of improvised.
-            </p>
-
-            <div className="landing-principle-list">
-              {explainabilityPoints.map((item) => (
-                <div key={item} className="landing-principle-item">
-                  <span className="landing-note-dot" />
-                  <p>{item}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="landing-hero-actions">
-              <Link to="/login" className="landing-button landing-button-primary">
-                Open console <ArrowRight size={15} />
-              </Link>
-              <a href="#docs" className="landing-button landing-button-secondary">
-                Review notes
-              </a>
-            </div>
-          </motion.article>
-
-          <motion.article className="landing-panel landing-eye-panel" {...reveal}>
-            <EyeGraphic />
-            <div className="landing-eye-caption">
-              <span className="landing-panel-label">ANALYST VIEW</span>
-              <strong>Context, indicators, and next action stay in frame.</strong>
-            </div>
-          </motion.article>
-        </section>
-
-        <section className="landing-console-grid" id="dashboard">
-          <motion.article className="landing-panel landing-console-panel" {...reveal}>
-            <div className="landing-panel-header">
-              <p className="landing-panel-label">CONSOLE PREVIEW</p>
-              <span className="landing-panel-code">LIVE</span>
-            </div>
-
-            <h2>One surface for triage, telemetry, and response.</h2>
-
-            <div className="landing-console-metrics">
-              {consoleMetrics.map((item) => (
-                <div key={item.label} className="landing-console-metric">
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            <div className="landing-console-table">
-              <div className="landing-console-head">
-                <span>Incident</span>
-                <span>Channel</span>
-                <span>Confidence</span>
-                <span>Status</span>
-              </div>
-
-              {activityRows.map((row) => (
-                <div key={row.incident} className="landing-console-row">
-                  <strong>{row.incident}</strong>
-                  <span>{row.channel}</span>
-                  <span>{row.confidence}</span>
-                  <span className={`landing-console-status ${row.status.toLowerCase()}`}>{row.status}</span>
-                </div>
-              ))}
-            </div>
-          </motion.article>
-
-          <div className="landing-side-stack">
-            <motion.article className="landing-panel landing-docs-panel" id="docs" {...reveal}>
-              <div className="landing-panel-header">
-                <p className="landing-panel-label">DOCS</p>
-                <span className="landing-panel-code">NOTES</span>
-              </div>
-
-              <div className="landing-docs-copy">
-                <h2>Documentation that feels maintained.</h2>
-                <p>
-                  Clear product notes matter because real operators need to understand how routing, scoring, and
-                  escalation behave before they trust the result.
+      <div className="landing-bespoke">
+        <motion.section className="section-hero-bridge" {...reveal}>
+            <div className="bridge-content">
+                <h2 className="stark-heading">
+                    A calmer front-end for <br/>
+                    <span className="text-muted">high-stakes threat decisions.</span>
+                </h2>
+                <p className="bridge-copy">
+                  The product surface behaves like a real launch site: concise framing,
+                  clear evidence of system behavior, and a direct path to the console.
                 </p>
-              </div>
+                <div className="bridge-stats">
+                   {overviewStats.map((item) => (
+                      <div key={item.label} className="raw-stat">
+                        <span className="raw-value">{item.value}</span>
+                        <span className="raw-label">{item.label}</span>
+                      </div>
+                    ))}
+                </div>
+            </div>
+        </motion.section>
 
-              <div className="landing-docs-list">
-                {docsItems.map((item) => (
-                  <div key={item} className="landing-docs-item">
-                    <span className="landing-note-dot" />
-                    <p>{item}</p>
+        <motion.section className="section-asymmetric-flow" id="how-it-works" {...reveal}>
+            <div className="flow-visual-zone">
+                <div className="mesh-globe-wrapper">
+                    <WireGlobe />
+                    <div className="raw-status-indicator">
+                        <span className="blinking-square"></span>
+                        Route Active
+                    </div>
+                </div>
+            </div>
+            
+            <div className="flow-text-zone">
+              <h2 className="stark-heading">Traffic enters sealed,<br/>leaves classified.</h2>
+              <p className="heavy-copy">
+                Krypton reduces what an attacker can infer by sealing local context first, fragmenting routes second,
+                and attaching explainable verdicts before the analyst ever touches the case.
+              </p>
+              
+              <div className="raw-timeline">
+                {protocolSteps.map((step) => (
+                  <div key={step.id} className="raw-step">
+                    <div className="raw-step-num">{step.id}</div>
+                    <div className="raw-step-detail">
+                        <h4>{step.title}</h4>
+                        <p>{step.description}</p>
+                    </div>
                   </div>
                 ))}
               </div>
-            </motion.article>
+            </div>
+        </motion.section>
 
-            <motion.article className="landing-panel landing-deploy-panel" {...reveal}>
-              <p className="landing-panel-label">READY TO LAUNCH</p>
-              <h3>Move from the public site into the product without a design cliff.</h3>
-              <p>
-                The landing page and authenticated workspace now share the same restraint, typography, and operating
-                tone, which makes the transition feel deliberate.
-              </p>
+        <motion.section className="section-monolithic-grid" id="threat-detection" {...reveal}>
+            <div className="monolith-header">
+                <h2 className="stark-heading">Coverage that feels productized,<br/><span className="text-muted">not hypothetical.</span></h2>
+            </div>
 
-              <div className="landing-hero-actions">
-                <Link to="/signup" className="landing-button landing-button-primary">
-                  Create account
-                </Link>
-                <Link to="/login" className="landing-button landing-button-secondary">
-                  Sign in
-                </Link>
-              </div>
-            </motion.article>
-          </div>
-        </section>
+            <div className="monolith-card-grid">
+              {threatSignals.map(({ id, label, surface, value, note, icon: Icon }) => (
+                <div key={label} className="monolith-card">
+                   <div className="monolith-card-top">
+                      <Icon size={24} className="monolith-icon" />
+                      <span className="monolith-surface">{surface}</span>
+                   </div>
+                   <h3>{label}</h3>
+                   <p className="monolith-value">{value}</p>
+                   <div className="monolith-card-bottom">
+                       <span>{note}</span>
+                   </div>
+                </div>
+              ))}
+            </div>
+        </motion.section>
+
+        <motion.section className="section-asymmetric-explainable" id="explainable-ai" {...reveal}>
+             <div className="explainable-text-zone">
+                <h2 className="stark-heading">Reasoning stays visible,<br/>even when response is fast.</h2>
+                <div className="raw-list">
+                  {explainabilityPoints.map((item) => (
+                    <div key={item} className="raw-list-item">
+                      <div className="bullet-square"></div>
+                      <p>{item}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="raw-action">
+                  <Link to="/login" className="btn-stark">
+                    Open console <ArrowRight size={16} />
+                  </Link>
+                </div>
+            </div>
+            
+            <div className="explainable-visual-zone">
+                <div className="stark-graphic-container">
+                   <EyeGraphic />
+                   <div className="stark-caption">
+                       Context, indicators, and next action stay in frame.
+                   </div>
+                </div>
+            </div>
+        </motion.section>
+
+        <motion.section className="section-terminal-preview" id="dashboard" {...reveal}>
+            <div className="terminal-header">
+                <h2 className="stark-heading">One surface for triage,<br/>telemetry, and response.</h2>
+            </div>
+
+            <div className="raw-terminal-window">
+               <div className="terminal-top-bar">
+                   <span className="terminal-title">INCIDENT_QUEUE_LIVE</span>
+               </div>
+               
+               <div className="terminal-metrics">
+                 {consoleMetrics.map((item) => (
+                    <div key={item.label} className="t-metric">
+                      <span className="t-label">{item.label}</span>
+                      <span className="t-value">{item.value}</span>
+                    </div>
+                  ))}
+               </div>
+
+               <div className="terminal-table-container">
+                 <table className="stark-table">
+                   <thead>
+                     <tr>
+                       <th>Incident</th>
+                       <th>Channel</th>
+                       <th>Confidence</th>
+                       <th>Status</th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                     {activityRows.map((row) => (
+                        <tr key={row.incident}>
+                          <td className="t-cell-strong">{row.incident}</td>
+                          <td className="t-cell-muted">{row.channel}</td>
+                          <td className="t-cell-mono">{row.confidence}</td>
+                          <td>
+                             <span className={`raw-status-text status-${row.status.toLowerCase()}`}>
+                               [{row.status.toUpperCase()}]
+                             </span>
+                          </td>
+                        </tr>
+                      ))}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+        </motion.section>
+        
+        <motion.section className="section-final-monolith" {...reveal}>
+            <div className="monolith-content">
+                <h2 className="stark-heading giant">Ready to move<br/>from edge to core?</h2>
+                <div className="monolith-actions">
+                    <Link to="/signup" className="btn-stark giant-btn">
+                      Create account
+                    </Link>
+                    <Link to="/login" className="btn-stark-ghost giant-btn">
+                      Sign in
+                    </Link>
+                </div>
+            </div>
+        </motion.section>
       </div>
     </>
   );
