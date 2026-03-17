@@ -127,35 +127,6 @@ export const authApi = {
       body: payload,
     });
   },
-
-  googleAuth(idToken) {
-    return request(`${API_BASE_URL}/auth/google`, {
-      method: "POST",
-      body: { idToken },
-    });
-  },
-
-  getGoogleOAuthUrl({ redirectAfterAuth, flow } = {}) {
-    const url = new URL(`${BACKEND_BASE_URL}/auth/google`);
-
-    if (redirectAfterAuth) {
-      url.searchParams.set("redirect", redirectAfterAuth);
-    }
-
-    if (flow) {
-      url.searchParams.set("flow", flow);
-    }
-
-    return url.toString();
-  },
-
-  getGoogleSignInUrl(redirectAfterAuth) {
-    return this.getGoogleOAuthUrl({ redirectAfterAuth, flow: "auth" });
-  },
-
-  getGoogleConnectUrl(redirectAfterAuth) {
-    return this.getGoogleOAuthUrl({ redirectAfterAuth, flow: "gmail" });
-  },
 };
 
 export const inboxApi = {
