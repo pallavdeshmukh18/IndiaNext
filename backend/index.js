@@ -18,6 +18,7 @@ app.use(cors());
 app.use(express.json({ limit: "12mb" }));
 
 const PORT = process.env.PORT || 8000;
+const HOST = process.env.HOST || "0.0.0.0";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/threats", threatRoutes);
@@ -77,7 +78,7 @@ app.get("/", (req, res) => {
     res.send("Backend running 🚀");
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
     const networkInterfaces = os.networkInterfaces();
     let networkIP = "localhost";
 
@@ -90,6 +91,6 @@ app.listen(PORT, () => {
     }
 
     console.log("🚀 Backend running on:");
-    console.log(`   Local:   http://localhost:${PORT}`);
+    console.log(`   Local:   http://${HOST}:${PORT}`);
     console.log(`   Network: http://${networkIP}:${PORT}`);
 });

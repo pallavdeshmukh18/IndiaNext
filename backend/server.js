@@ -17,6 +17,7 @@ const threatRoutes = require("./routes/threatRoutes");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8000;
+const HOST = process.env.HOST || "0.0.0.0";
 const canStartWithoutDb = process.env.ALLOW_START_WITHOUT_DB === "true"
   || process.env.NODE_ENV !== "production";
 
@@ -28,8 +29,8 @@ function startServer() {
   }
 
   serverStarted = true;
-  app.listen(PORT, () => {
-    console.log(`Scamurai backend running on http://localhost:${PORT}`);
+  app.listen(PORT, HOST, () => {
+    console.log(`Scamurai backend listening on http://${HOST}:${PORT}`);
   });
 }
 
@@ -87,13 +88,14 @@ app.use("/api", historyRoutes);
 app.use("/api", analyticsRoutes);
 app.use("/api", alertRoutes);
 
+startServer();
+
 mongoose
   .connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 10000,
   })
   .then(() => {
     console.log("MongoDB connected");
-    startServer();
   })
   .catch((error) => {
     console.error("Failed to connect to MongoDB:", error.message);
@@ -101,10 +103,9 @@ mongoose
       console.error("MongoDB Atlas SRV lookup failed. Use a non-SRV mongodb:// replica set URI in backend/.env.");
     }
     if (canStartWithoutDb) {
-      console.warn("Starting without MongoDB connection (degraded mode). Set ALLOW_START_WITHOUT_DB=false to keep fail-fast behavior.");
-      startServer();
+      console.warn("Running without MongoDB connection (degraded mode). Set ALLOW_START_WITHOUT_DB=false to keep fail-fast behavior.");
       return;
     }
 
-    process.exit(1);
+    console.error("MongoDB is required in this environment. Process will keep serving while DB-dependent routes may fail.");
   });
