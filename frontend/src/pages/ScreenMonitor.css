@@ -1,0 +1,291 @@
+/* ============================================
+   Screen Monitor page styles
+   ============================================ */
+
+/* Settings panel */
+.sm-settings-panel {
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  border: 1px solid var(--workspace-card-border-soft);
+  background: rgba(255, 255, 255, 0.04);
+  margin-bottom: 0.05rem;
+}
+
+.sm-settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  align-items: flex-start;
+}
+
+.sm-settings-field {
+  display: grid;
+  gap: 0.4rem;
+
+.sm-settings-field-wide {
+  grid-column: 1 / -1;
+}
+
+.sm-apikey-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.sm-apikey-input {
+  flex: 1;
+  min-width: 0;
+  min-height: unset !important;
+  height: 2.75rem;
+  resize: none;
+  padding: 0.6rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-main, #f5f5f7);
+  font-family: monospace;
+  font-size: 0.88rem;
+  letter-spacing: 0.05em;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sm-apikey-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+.sm-provider-note {
+  font-size: 0.72rem;
+  opacity: 0.55;
+  font-weight: 400;
+  margin-left: 0.2rem;
+}
+
+
+}
+
+/* Two-column layout (same pattern as analysis-layout) */
+.sm-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.95rem;
+  width: 100%;
+}
+
+/* Preview panel */
+.sm-preview-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sm-video-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.45);
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.85rem;
+}
+
+.sm-video {
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  display: block;
+  border-radius: 12px;
+}
+
+.sm-video-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 2.5rem 1.5rem;
+  color: rgba(245, 245, 247, 0.4);
+  text-align: center;
+}
+
+.sm-video-placeholder p {
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+/* Status overlay badge */
+.sm-status-overlay {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.32rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(245, 245, 247, 0.85);
+  letter-spacing: 0.02em;
+}
+
+.sm-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(245, 245, 247, 0.5);
+  flex-shrink: 0;
+}
+
+.sm-status-idle .sm-status-dot    { background: rgba(245, 245, 247, 0.3); }
+.sm-status-scanning .sm-status-dot { background: #60a5fa; animation: sm-pulse 1.2s infinite; }
+.sm-status-suspicious .sm-status-dot { background: #f87171; animation: sm-pulse 0.7s infinite; }
+.sm-status-safe .sm-status-dot    { background: #4ade80; }
+
+@keyframes sm-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+
+.sm-frame-count {
+  opacity: 0.65;
+  font-weight: 400;
+}
+
+/* Controls */
+.sm-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Override analysis-submit for stop state */
+.sm-stop-btn {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.20) 0%, rgba(239, 68, 68, 0.08) 100%) !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+}
+
+.sm-stop-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.30) 0%, rgba(239, 68, 68, 0.14) 100%) !important;
+  border-color: rgba(239, 68, 68, 0.7) !important;
+}
+
+/* Voice toggle row */
+.sm-voice-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+/* Results panel */
+.sm-results-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* Latest result hero card */
+.sm-hero-card {
+  padding: 0.88rem;
+  border-radius: 14px;
+  border: 1px solid var(--workspace-card-border-soft);
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: 0.75rem;
+}
+
+.sm-hero-high {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.07);
+}
+
+.sm-hero-medium {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.06);
+}
+
+.sm-hero-low {
+  border-color: rgba(74, 222, 128, 0.25);
+  background: rgba(74, 222, 128, 0.05);
+}
+
+/* Scrollable log list */
+.sm-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.sm-log::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sm-log::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sm-log::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+.sm-log-row {
+  padding: 0.65rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--workspace-card-border-soft);
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  gap: 0.22rem;
+}
+
+.sm-log-high   { border-color: rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.04); }
+.sm-log-medium { border-color: rgba(251, 191, 36, 0.2); background: rgba(251, 191, 36, 0.04); }
+.sm-log-low    { border-color: rgba(74, 222, 128, 0.15); background: rgba(74, 222, 128, 0.03); }
+
+.sm-log-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sm-log-time {
+  font-size: 0.75rem;
+  color: rgba(245, 245, 247, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.sm-log-body {
+  font-size: 0.87rem;
+  color: rgba(245, 245, 247, 0.9);
+}
+
+.sm-log-body span {
+  color: rgba(245, 245, 247, 0.5);
+  font-size: 0.8rem;
+}
+
+.sm-log-explanation {
+  font-size: 0.8rem;
+  color: rgba(245, 245, 247, 0.6);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .sm-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

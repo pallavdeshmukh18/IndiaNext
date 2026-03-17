@@ -8,7 +8,8 @@ import {
   LogOut,
   Mail,
   Sparkles,
-  History as HistoryIcon
+  History as HistoryIcon,
+  MonitorPlay
 } from 'lucide-react';
 import brandLogo from '../assets/images/Screenshot_2026-03-17_at_5.21.08_AM-removebg-preview.png';
 import './AppShell.css';
@@ -43,6 +44,12 @@ const navItems = [
     label: 'Alerts',
     caption: 'Triage priority incidents',
     icon: BellRing
+  },
+  {
+    to: '/app/screen-monitor',
+    label: 'Screen Monitor',
+    caption: 'Live AI screen surveillance',
+    icon: MonitorPlay
   }
 ];
 
@@ -76,6 +83,12 @@ const pageMeta = {
     title: 'Priority alert queue',
     description: 'Focus on the incidents that need immediate action and preserve response context.',
     breadcrumb: 'Alerts'
+  },
+  '/app/screen-monitor': {
+    eyebrow: 'SURVEILLANCE',
+    title: 'Screen Monitor',
+    description: 'Continuously analyze your screen for threats and receive instant voice alerts.',
+    breadcrumb: 'Screen Monitor'
   }
 };
 

@@ -10,6 +10,7 @@ import Analysis from './pages/analysis';
 import HistoryPage from './pages/history';
 import AlertsPage from './pages/alerts';
 import Inbox from './pages/inbox';
+import ScreenMonitor from './pages/ScreenMonitor';
 import GoogleCallback from './pages/googleCallback';
 import AuthSuccess from './pages/authSuccess';
 import AuthError from './pages/authError';
@@ -134,6 +135,7 @@ function App() {
               <Route path="inbox" element={<Inbox session={session} />} />
               <Route path="history" element={<HistoryPage session={session} />} />
               <Route path="alerts" element={<AlertsPage session={session} />} />
+              <Route path="screen-monitor" element={<ScreenMonitor session={session} />} />
             </Route>
 
             <Route
