@@ -1,5 +1,7 @@
 import { NativeModules, Platform } from "react-native";
 
+const PRODUCTION_BACKEND_BASE_URL = "https://indianext.onrender.com";
+
 function trimTrailingSlash(value) {
   return String(value || "").replace(/\/+$/, "");
 }
@@ -27,6 +29,12 @@ function resolveBackendBaseUrl() {
 
   if (explicitBaseUrl) {
     return explicitBaseUrl.replace(/\/api$/, "");
+  }
+
+  const isDevelopment = typeof __DEV__ !== "undefined" && __DEV__;
+
+  if (!isDevelopment) {
+    return PRODUCTION_BACKEND_BASE_URL;
   }
 
   const host = getMetroHost();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight, Play, Puzzle, Smartphone, Send, MessageCircle } from 'lucide-react';
 import './Hero.css';
 
 const Hero = () => {
@@ -34,10 +34,16 @@ const Hero = () => {
                 className="hero-actions"
             >
                 <button className="btn-primary flex-center">
-                    Scan a Threat <ArrowRight size={16} className="ml-2" />
+                    <Puzzle size={16} className="mr-2" /> Download Extension
                 </button>
                 <button className="btn-secondary glass-pill flex-center">
-                    <Play size={16} className="mr-2" /> View Demo
+                    <Smartphone size={16} className="mr-2" /> Download Mobile APK
+                </button>
+                <button className="btn-secondary glass-pill flex-center">
+                    <Send size={16} className="mr-2" /> Telegram Bot
+                </button>
+                <button className="btn-secondary glass-pill flex-center">
+                    <MessageCircle size={16} className="mr-2" /> WhatsApp Bot
                 </button>
             </motion.div>
         </section>
