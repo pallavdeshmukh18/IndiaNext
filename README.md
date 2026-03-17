@@ -240,4 +240,4 @@ Important:
 
 ## 📝 License
 
-Proprietary / All rights reserved.
+Proprietary / All rights reserved - Team NODEtorious.
